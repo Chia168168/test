@@ -1,1 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>Base64 → 圖片轉換工具</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+      background: #f4f4f9;
+      color: #333;
+    }
+    h2 { margin-bottom: 10px; }
+    #preview { margin-top: 20px; }
+    img { max-width: 90%; height: auto; border: 1px solid #ccc; margin-top: 10px; }
+    textarea {
+      width: 95%; 
+      height: 150px;
+      border: 1px solid #aaa;
+      padding: 10px;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 10px;
+      border: none;
+      border-radius: 5px;
+      background: #0078D7;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:hover { background: #005A9E; }
+    a {
+      display: inline-block;
+      margin-top: 15px;
+      padding: 8px 15px;
+      background: #28a745;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+    }
+    a:hover { background: #1e7e34; }
+  </style>
+</head>
+<body>
+  <h2>📷 Base64 → 圖片轉換工具</h2>
+  <p>貼上 Base64 編碼，或上傳文字檔，轉換為圖片</p>
 
+  <textarea id="base64input" placeholder="請貼上 Base64 編碼..."></textarea><br>
+  <input type="file" id="fileInput" accept=".txt"><br>
+  <button onclick="convertBase64()">轉換成圖片</button>
+
+  <div id="preview"></div>
+
+  <script>
+    // 處理檔案上傳
+    document.getElementById('fileInput').addEventListener('change', function(evt) {
+      const file = evt.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('base64input').value = e.target.result.trim();
+      };
+      reader.readAsText(file);
+    });
+
+    // 轉換 Base64 成圖片
+    function convertBase64() {
+      const base64 = document.getElementById('base64input').value.trim();
+      if (!base64) {
+        alert("⚠️ 請先貼上 Base64 或選擇檔案");
+        return;
+      }
+
+      try {
+        const img = document.createElement('img');
+        img.src = "data:image/*;base64," + base64;
+        const preview = document.getElementById('preview');
+        preview.innerHTML = "<h3>✅ 轉換成功：</h3>";
+        preview.appendChild(img);
+
+        // 下載連結
+        const link = document.createElement('a');
+        link.href = img.src;
+        link.download = "output.png";
+        link.textContent = "⬇️ 下載圖片";
+        preview.appendChild(link);
+      } catch (e) {
+        alert("❌ 轉換失敗，請確認 Base64 是否正確");
+      }
+    }
+  </script>
+</body>
+</html>
