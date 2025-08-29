@@ -28,9 +28,13 @@ select, input[type="number"], input[type="text"], input[type="range"] {
 .drop.dragover{outline:2px solid #5eead4;}
 label{display:block;margin-top:10px;font-size:14px;color:#9aa4b2;}
 @media(max-width:600px){
-  .tabs{flex-direction:column;}
-  .tab{margin:4px 0;}
+  body { margin:0 5px; }
+  .card { margin:5px; padding:12px; max-width:100%; }
+  button, select, input, textarea { width:100% !important; box-sizing:border-box; font-size:16px; }
+  .flex-row { flex-direction:column; }
+  .thumbs { grid-template-columns:repeat(auto-fill,minmax(100%,1fr)); gap:6px; }
 }
+
 .flex-col{display:flex; flex-direction:column; gap:8px;}
 .flex-row{display:flex; flex-direction:row; gap:8px; flex-wrap:wrap;}
 .flex-row > *{flex:1;}
