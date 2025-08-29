@@ -95,18 +95,26 @@
 <textarea id="base64Input" placeholder="貼上 Base64 字串（或直接選檔）"></textarea>
 <input type="file" id="base64File" accept=".txt">
 
+<!-- 進度條 -->
+<div id="progressContainer" style="width:100%; background:#ddd; height:20px; display:none; margin:10px 0;">
+  <div id="progressBar" style="width:0%; height:100%; background:#4caf50; text-align:center; color:white; font-size:12px;">0%</div>
+</div>
+
 <a id="downloadRestored" style="display:none" download="restored.png">下載圖片</a>
 <img id="restoredImg" class="preview">
 
 <script>
-  // 檔案選擇後，自動載入並顯示圖片
+  // 檔案選擇後 → 自動載入並顯示圖片
   document.getElementById("base64File").addEventListener("change", e => {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
+
+    showProgress(); // 顯示進度條
+
     reader.onload = evt => {
       document.getElementById("base64Input").value = evt.target.result.trim();
-      convertBase64ToImage(); // 自動轉換
+      convertBase64ToImage(); 
     };
     reader.readAsText(file);
   });
@@ -114,9 +122,39 @@
   // 文字框改變時也會自動預覽
   document.getElementById("base64Input").addEventListener("input", () => {
     if (document.getElementById("base64Input").value.trim() !== "") {
+      showProgress();
       convertBase64ToImage();
     }
   });
+
+  // 顯示進度條 (模擬進度)
+  function showProgress() {
+    const container = document.getElementById("progressContainer");
+    const bar = document.getElementById("progressBar");
+    container.style.display = "block";
+    bar.style.width = "0%";
+    bar.textContent = "0%";
+
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += 20;
+      if (progress >= 90) {
+        clearInterval(interval); // 停在 90%，等轉換完成再收尾
+      }
+      bar.style.width = progress + "%";
+      bar.textContent = progress + "%";
+    }, 200);
+  }
+
+  function hideProgress() {
+    const container = document.getElementById("progressContainer");
+    const bar = document.getElementById("progressBar");
+    bar.style.width = "100%";
+    bar.textContent = "100%";
+    setTimeout(() => {
+      container.style.display = "none";
+    }, 500);
+  }
 
   function detectFormat(base64) {
     if (base64.startsWith("iVBORw0KGgo")) return "png";
@@ -144,7 +182,9 @@
     }
 
     // 顯示圖片
-    document.getElementById("restoredImg").src = base64;
+    const img = document.getElementById("restoredImg");
+    img.onload = () => hideProgress(); // 圖片載入完成才隱藏進度
+    img.src = base64;
 
     // 設定下載連結
     const link = document.getElementById("downloadRestored");
