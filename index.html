@@ -92,60 +92,32 @@
       <h2>Base64 ➝ 圖片</h2>
 
 <!-- Base64 ➝ 圖片 -->
-    <textarea id="base64Input" placeholder="貼上 Base64 字串"></textarea>
-    <br>
-    <input type="file" id="base64File" accept=".txt">
-    <button onclick="convertBase64ToImage()">轉換並預覽</button>
-    <a id="downloadRestored" style="display:none" download="restored.png">下載圖片</a>
-    <br>
-    <img id="restoredImg" class="preview">
-  </div>
+    <!-- Base64 ➝ 圖片 -->
+<h2>Base64 ➝ 圖片</h2>
+<textarea id="base64Input" placeholder="貼上 Base64 字串（或直接選檔）"></textarea>
+<input type="file" id="base64File" accept=".txt">
+<button onclick="convertBase64ToImage()">轉換並預覽</button>
+<a id="downloadRestored" style="display:none" download="restored.png">下載圖片</a>
+<img id="restoredImg" class="preview">
 
-  <script src="https://cdn.jsdelivr.net/npm/heic2any/dist/heic2any.min.js"></script>
-  <script>
-    // ========== Base64 工具 ==========
-    document.getElementById("imgToBase64").addEventListener("change", function(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(evt) {
-        const base64 = evt.target.result;
-        document.getElementById("base64Output").value = base64;
-        document.getElementById("previewBase64Img").src = base64;
-      };
-      reader.readAsDataURL(file);
-    });
+<script>
+  // 當選擇 txt 檔時，自動載入到 textarea
+  document.getElementById("base64File").addEventListener("change", e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = evt => {
+      document.getElementById("base64Input").value = evt.target.result.trim();
+    };
+    reader.readAsText(file);
+  });
 
-    function downloadBase64() {
-      const text = document.getElementById("base64Output").value;
-      if (!text) return alert("沒有可下載的 Base64 資料");
-      const blob = new Blob([text], {type: "text/plain"});
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "image_base64.txt";
-      link.click();
-    }
+  function convertBase64ToImage() {
+    let base64 = document.getElementById("base64Input").value.trim();
+    if (!base64) return alert("請選擇 Base64 檔案或貼上字串");
 
-    // Base64 ➝ 圖片：可貼字串或上傳 txt
-function convertBase64ToImage() {
-    const base64Text = document.getElementById("base64Input").value.trim();
-    const fileInput = document.getElementById("base64File");
-    if (base64Text) {
-      showRestoredImage(base64Text);
-    } else if (fileInput.files.length > 0) {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        showRestoredImage(e.target.result.trim());
-      };
-      reader.readAsText(fileInput.files[0]);
-    } else {
-      alert("請貼上 Base64 字串或選擇一個檔案");
-    }
-  }
-
-  function showRestoredImage(base64) {
-    // 🔹 自動補上 data:image/png;base64 前綴
-    if (!base64.startsWith("data:image")) {
+    // 自動補上前綴
+    if (!base64.startsWith("data:image/")) {
       base64 = "data:image/png;base64," + base64;
     }
 
@@ -154,7 +126,7 @@ function convertBase64ToImage() {
     link.href = base64;
     link.style.display = "inline-block";
   }
-  </script>
+</script>
     </section>
   </div>
 
