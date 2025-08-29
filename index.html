@@ -203,11 +203,11 @@ function calcTargetSize(srcW,srcH){
   const heightCustom = Number(document.getElementById('heightCustom').value);
 
   if(widthSel>0 && widthSel!=-1){ w = widthSel; if(document.getElementById('lock').checked) h=Math.round(srcH*widthSel/srcW);}
-  if(widthSel==-1 && widthCustom>0) w = widthCustom;
+  if(widthSel==-1 && widthCustom>0){ w = widthCustom; if(document.getElementById('lock').checked) h=Math.round(srcH*widthSel/srcW);}
   
   if(heightSel>0 && heightSel!=-1){ h = heightSel; if(document.getElementById('lock').checked) w=Math.round(srcW*heightSel/srcH);}
-  if(heightSel==-1 && heightCustom>0) h = heightCustom;
-  return {w,h};
+  if(heightSel==-1 && heightCustom>0){ h = heightCustom; if(document.getElementById('lock').checked) w=Math.round(srcW*heightSel/srcH);}
+  return {w,h}; 
 }
 
 function guessMime(name,original){
