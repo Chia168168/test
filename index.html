@@ -90,11 +90,34 @@
 
       <hr>
       <h2>Base64 ➝ 圖片</h2>
-      <textarea id="base64Input" placeholder="貼上 Base64 字串"></textarea>
-      <input type="file" id="base64File" accept=".txt">
-      <button onclick="convertBase64ToImage()">轉換並預覽</button>
-      <a id="downloadRestored" style="display:none" download="restored.png">下載圖片</a>
-      <img id="restoredImg" class="preview">
+<h2>Base64 ➝ 圖片</h2>
+<textarea id="base64Input" placeholder="貼上 Base64 字串（或直接選檔）"></textarea>
+<input type="file" id="base64File" accept=".txt">
+<button onclick="convertBase64ToImage()">轉換並預覽</button>
+<a id="downloadRestored" style="display:none" download="restored.png">下載圖片</a>
+<img id="restoredImg" class="preview">
+
+<script>
+  // 當選擇 txt 檔時，自動載入到 textarea
+  document.getElementById("base64File").addEventListener("change", e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = evt => {
+      document.getElementById("base64Input").value = evt.target.result.trim();
+    };
+    reader.readAsText(file);
+  });
+
+  function convertBase64ToImage() {
+    const base64 = document.getElementById("base64Input").value.trim();
+    if (!base64) return alert("請選擇 Base64 檔案或貼上字串");
+    document.getElementById("restoredImg").src = base64;
+    const link = document.getElementById("downloadRestored");
+    link.href = base64;
+    link.style.display = "inline-block";
+  }
+</script>
     </section>
   </div>
 
