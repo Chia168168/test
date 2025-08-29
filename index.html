@@ -82,6 +82,7 @@
           <option value="1280">1280</option>
           <option value="-1">自訂</option>
         </select>
+        <input type="number" id="widthCustom" placeholder="自訂寬度" style="display:none; margin-top:5px;">        
       </label>
       <label>高度
         <select id="height">
@@ -144,7 +145,9 @@ document.querySelectorAll(".tab").forEach(tab=>{
 document.getElementById("height").addEventListener("change", e=>{
   document.getElementById("heightCustom").style.display = e.target.value == "-1" ? "block" : "none";
 });
-
+document.getElementById("width").addEventListener("change", e=>{
+  document.getElementById("widthCustom").style.display = e.target.value == "-1" ? "block" : "none";
+});
 // ---------- 縮放/品質顯示 ----------
 document.getElementById("scale").addEventListener("input", e=>{
   document.getElementById("scaleLabel").textContent = e.target.value + "%";
