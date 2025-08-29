@@ -89,20 +89,11 @@
       <img id="previewBase64Img" class="preview">
 
       <hr>
-      <h2>Base64 ➝ 圖片</h2>
-
+      
 <!-- Base64 ➝ 圖片 -->
 <h2>Base64 ➝ 圖片</h2>
 <textarea id="base64Input" placeholder="貼上 Base64 字串（或直接選檔）"></textarea>
 <input type="file" id="base64File" accept=".txt">
-
-<!-- 新增格式選單 -->
-<label for="imgFormat">若未偵測到前綴，自動補上：</label>
-<select id="imgFormat">
-  <option value="png">PNG</option>
-  <option value="jpeg">JPG</option>
-  <option value="webp">WebP</option>
-</select>
 
 <a id="downloadRestored" style="display:none" download="restored.png">下載圖片</a>
 <img id="restoredImg" class="preview">
@@ -127,26 +118,29 @@
     }
   });
 
-  // 格式切換時即時更新
-  document.getElementById("imgFormat").addEventListener("change", () => {
-    if (document.getElementById("base64Input").value.trim() !== "") {
-      convertBase64ToImage();
-    }
-  });
+  function detectFormat(base64) {
+    if (base64.startsWith("iVBORw0KGgo")) return "png";
+    if (base64.startsWith("/9j/")) return "jpeg";
+    if (base64.startsWith("UklGR")) return "webp";
+    return "png"; // 預設 PNG
+  }
 
   function convertBase64ToImage() {
     let raw = document.getElementById("base64Input").value.trim();
     if (!raw) return;
 
-    const format = document.getElementById("imgFormat").value;
+    let format;
     let base64 = raw;
 
-    // 如果沒有 data:image 前綴 → 自動補
     if (!raw.startsWith("data:image/")) {
+      // 自動偵測格式
+      format = detectFormat(raw);
       base64 = `data:image/${format};base64,` + raw;
     } else {
-      // 如果已有前綴 → 強制轉換成下拉選單的格式
-      base64 = raw.replace(/^data:image\/(png|jpeg|jpg|webp);base64,/, `data:image/${format};base64,`);
+      // 已有前綴 → 直接取出格式
+      const match = raw.match(/^data:image\/(png|jpeg|jpg|webp);base64,/);
+      format = match ? match[1] : "png";
+      base64 = raw;
     }
 
     // 顯示圖片
