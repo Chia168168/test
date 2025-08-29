@@ -1,97 +1,200 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh">
 <head>
   <meta charset="UTF-8">
-  <title>Base64 → 圖片轉換工具</title>
+  <title>Teng Image Tools</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 20px;
-      background: #f4f4f9;
-      color: #333;
+    body { font-family: Arial, sans-serif; margin: 20px; background:#0b1020; color:#e7ecf3; }
+    h1, h2 { text-align: center; }
+    .tabs { display: flex; justify-content: center; margin-bottom: 20px; }
+    .tab { padding: 10px 20px; cursor: pointer; border: 1px solid #ccc; margin: 0 5px; border-radius:6px; }
+    .tab.active { background: #007bff; color: #fff; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    textarea { width: 100%; height: 150px; }
+    img.preview { max-width: 100%; max-height: 200px; display: block; margin: 10px auto; }
+    button { margin: 5px; }
+    select, input[type="number"], input[type="text"], input[type="range"] {
+      padding:6px; border-radius:6px; border:1px solid #27314a; background:#141a2e; color:#e7ecf3;
     }
-    h2 { margin-bottom: 10px; }
-    #preview { margin-top: 20px; }
-    img { max-width: 90%; height: auto; border: 1px solid #ccc; margin-top: 10px; }
-    textarea {
-      width: 95%; 
-      height: 150px;
-      border: 1px solid #aaa;
-      padding: 10px;
-      border-radius: 5px;
-      font-size: 14px;
-    }
-    button {
-      padding: 10px 20px;
-      margin: 10px;
-      border: none;
-      border-radius: 5px;
-      background: #0078D7;
-      color: white;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    button:hover { background: #005A9E; }
-    a {
-      display: inline-block;
-      margin-top: 15px;
-      padding: 8px 15px;
-      background: #28a745;
-      color: white;
-      text-decoration: none;
-      border-radius: 5px;
-    }
-    a:hover { background: #1e7e34; }
+    .card{background:#141a2e;border:1px solid #27314a;border-radius:12px;padding:16px;margin:12px auto;max-width:1000px}
+    .log{font-family:monospace;background:#0a0f22;border:1px solid #27314a;border-radius:8px;padding:10px;height:160px;overflow:auto}
+    .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+    .thumb{background:#0c1226;border:1px solid #27314a;border-radius:12px;overflow:hidden}
+    .thumb img{width:100%;display:block}
+    .thumb .meta{padding:8px;font-size:12px;color:#9aa4b2;text-align:center}
+    .drop{border:2px dashed #2b3b66;border-radius:10px;padding:18px;text-align:center;color:#c7d2fe;background:#0d1330;margin-bottom:10px}
+    .drop.dragover{outline:2px solid #5eead4}
+    label{display:block;margin-top:10px;font-size:14px;color:#9aa4b2}
   </style>
+
+  <!-- 相依套件 -->
+  <script src="https://cdn.jsdelivr.net/npm/pica@8.0.0/dist/pica.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/mini.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/piexifjs@1.0.6/piexif.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip/dist/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/file-saver/dist/FileSaver.min.js"></script>
 </head>
 <body>
-  <h2>📷 Base64 → 圖片轉換工具</h2>
-  <p>貼上 Base64 編碼，或上傳文字檔，轉換為圖片</p>
+  <h1>Teng Image Tools</h1>
 
-  <textarea id="base64input" placeholder="請貼上 Base64 編碼..."></textarea><br>
-  <input type="file" id="fileInput" accept=".txt"><br>
-  <button onclick="convertBase64()">轉換成圖片</button>
+  <!-- 分頁切換 -->
+  <div class="tabs">
+    <div class="tab active" data-tab="resizer">尺寸格式調整</div>
+    <div class="tab" data-tab="base64">Base64轉換</div>
+  </div>
 
-  <div id="preview"></div>
+  <!-- 圖片尺寸調整區塊 -->
+  <div id="resizer" class="tab-content active">
+    <section class="card">
+      <h2>圖片尺寸/格式調整器</h2>
+      <div class="drop" id="drop">拖曳圖片或資料夾到這裡</div>
+      <input id="fileFiles" type="file" accept="image/*,.heic,.heif" multiple>
+      <input id="fileFolder" type="file" webkitdirectory>
+      <button id="process">開始處理</button>
+      <button id="clear">清空</button>
+
+      <h3>輸出選項</h3>
+      <label>輸出格式
+        <select id="format">
+          <option value="keep">維持原格式</option>
+          <option value="image/jpeg" selected>JPEG</option>
+          <option value="image/png">PNG</option>
+          <option value="image/webp">WebP</option>
+        </select>
+      </label>
+      <label>寬度 (px) <input id="width" type="number" placeholder="0=原尺寸"></label>
+      <label>高度 (px) <input id="height" type="number" placeholder="0=原尺寸"></label>
+      <label><input id="lock" type="checkbox" checked> 維持長寬比</label>
+      <label><input id="fit" type="checkbox" checked> 以最長邊等比縮放 (fit)</label>
+      <label>縮放比例 (%) <input id="scale" type="range" min="10" max="200" value="100"><span id="scaleLabel">100%</span></label>
+      <label>品質 (JPEG/WebP) <input id="quality" type="range" min="50" max="100" value="90"><span id="qualityLabel">90%</span></label>
+      <label>DPI <input id="dpi" type="number" placeholder="例如 300"> <input id="writeDpi" type="checkbox"> 寫入 JPEG EXIF DPI</label>
+
+      <h3>預覽</h3>
+      <div id="thumbs" class="thumbs"></div>
+      <h3>日誌</h3>
+      <div id="log" class="log"></div>
+    </section>
+  </div>
+
+  <!-- Base64 工具 -->
+  <div id="base64" class="tab-content">
+    <section class="card">
+      <h2>圖片 ➝ Base64</h2>
+      <input type="file" id="imgToBase64" accept="image/*">
+      <button onclick="downloadBase64()">下載 Base64 txt</button>
+      <textarea id="base64Output" placeholder="這裡會顯示 Base64 編碼"></textarea>
+      <img id="previewBase64Img" class="preview">
+
+      <hr>
+      <h2>Base64 ➝ 圖片</h2>
+      <textarea id="base64Input" placeholder="貼上 Base64 字串"></textarea>
+      <input type="file" id="base64File" accept=".txt">
+      <button onclick="convertBase64ToImage()">轉換並預覽</button>
+      <a id="downloadRestored" style="display:none" download="restored.png">下載圖片</a>
+      <img id="restoredImg" class="preview">
+    </section>
+  </div>
 
   <script>
-    // 處理檔案上傳
-    document.getElementById('fileInput').addEventListener('change', function(evt) {
-      const file = evt.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        document.getElementById('base64input').value = e.target.result.trim();
-      };
-      reader.readAsText(file);
+    // --- 分頁切換 ---
+    document.querySelectorAll(".tab").forEach(tab => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+        document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+        tab.classList.add("active");
+        document.getElementById(tab.dataset.tab).classList.add("active");
+      });
     });
 
-    // 轉換 Base64 成圖片
-    function convertBase64() {
-      const base64 = document.getElementById('base64input').value.trim();
-      if (!base64) {
-        alert("⚠️ 請先貼上 Base64 或選擇檔案");
-        return;
-      }
+    // --- 圖片尺寸調整器 ---
+    const drop=document.getElementById('drop');
+    const fileFiles=document.getElementById('fileFiles');
+    const fileFolder=document.getElementById('fileFolder');
+    const thumbs=document.getElementById('thumbs');
+    const logEl=document.getElementById('log');
+    const processBtn=document.getElementById('process');
+    const clearBtn=document.getElementById('clear');
+    const fmtSel=document.getElementById('format');
+    const widthEl=document.getElementById('width');
+    const heightEl=document.getElementById('height');
+    const lockEl=document.getElementById('lock');
+    const fitEl=document.getElementById('fit');
+    const scaleEl=document.getElementById('scale');
+    const scaleLabel=document.getElementById('scaleLabel');
+    const qualityEl=document.getElementById('quality');
+    const qualityLabel=document.getElementById('qualityLabel');
+    const dpiEl=document.getElementById('dpi');
+    const writeDpiEl=document.getElementById('writeDpi');
+    const queue=[];
+    const pica=window.pica({features:['js','wasm','cib']});
 
-      try {
-        const img = document.createElement('img');
-        img.src = "data:image/*;base64," + base64;
-        const preview = document.getElementById('preview');
-        preview.innerHTML = "<h3>✅ 轉換成功：</h3>";
-        preview.appendChild(img);
-
-        // 下載連結
-        const link = document.createElement('a');
-        link.href = img.src;
-        link.download = "output.png";
-        link.textContent = "⬇️ 下載圖片";
-        preview.appendChild(link);
-      } catch (e) {
-        alert("❌ 轉換失敗，請確認 Base64 是否正確");
-      }
+    function log(msg){ const time=new Date().toLocaleTimeString(); logEl.innerHTML+=`[${time}] ${msg}<br>`; logEl.scrollTop=logEl.scrollHeight; }
+    function addThumb(src,name,w,h){
+      const div=document.createElement('div'); div.className='thumb';
+      const img=new Image(); img.src=src; div.appendChild(img);
+      const meta=document.createElement('div'); meta.className='meta'; meta.innerHTML=`${name}<br>${w}×${h}px`; div.appendChild(meta);
+      thumbs.appendChild(div);
     }
+    async function readAsImage(blob){ return new Promise((res,rej)=>{ const url=URL.createObjectURL(blob); const img=new Image(); img.onload=()=>{URL.revokeObjectURL(url);res(img);}; img.onerror=rej; img.src=url; }); }
+    function guessMime(name,original){ if(fmtSel.value!=='keep') return fmtSel.value; const ext=(name.split('.').pop()||'').toLowerCase(); const map={jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',webp:'image/webp'}; return map[ext]||original||'image/jpeg'; }
+    function calcTargetSize(srcW,srcH){
+      const scale=Number(scaleEl.value)/100; let w=Math.round(srcW*scale),h=Math.round(srcH*scale);
+      const iw=Number(widthEl.value||0),ih=Number(heightEl.value||0);
+      if(lockEl.checked){ const ar=srcW/srcH;
+        if(fitEl.checked && iw && ih){ const r=Math.min(iw/srcW,ih/srcH); w=Math.round(srcW*r); h=Math.round(srcH*r); }
+        else if(iw){ w=iw; h=Math.round(iw/ar); }
+        else if(ih){ h=ih; w=Math.round(ih*ar); }
+      } else { if(iw)w=iw; if(ih)h=ih; }
+      return {w:Math.max(1,w),h:Math.max(1,h)};
+    }
+    async function processFile(file){
+      try{
+        let f=file;
+        if(file.name.toLowerCase().endsWith(".heic")||file.name.toLowerCase().endsWith(".heif")){
+          const blob=await heic2any({blob:file,toType:"image/png"});
+          f=new File([blob],file.name.replace(/\.(heic|heif)$/i,'.png'),{type:"image/png"});
+        }
+        const img=await readAsImage(f);
+        const {w,h}=calcTargetSize(img.naturalWidth,img.naturalHeight);
+        const off=document.createElement('canvas'); off.width=w; off.height=h;
+        await pica.resize(img,off,{quality:3,alpha:true});
+        const mime=guessMime(f.name,f.type);
+        const quality=Number(qualityEl.value)/100;
+        let outBlob=await pica.toBlob(off,mime,(mime.includes('jpeg')||mime.includes('webp'))?quality:undefined);
+        const extMap={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'};
+        const ext=extMap[mime]||'jpg';
+        const outName=`${file.name.replace(/\.[^.]+$/,'')}_${w}x${h}.${ext}`;
+        return {blob:outBlob,name:outName,w,h};
+      }catch(e){ log(`錯誤：${file.name} → ${e}`); return null; }
+    }
+    function downloadBlob(blob,name){ const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(url),2000); }
+    async function handleFiles(list){ for(const file of list){ queue.push(file); addThumb(URL.createObjectURL(file),file.name,'—','—'); } log(`加入 ${list.length} 個檔案`); }
+    drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('dragover');});
+    drop.addEventListener('dragleave',e=>{e.preventDefault();drop.classList.remove('dragover');});
+    drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('dragover'); handleFiles([...e.dataTransfer.files]);});
+    fileFiles.addEventListener('change',e=>handleFiles([...e.target.files]));
+    fileFolder.addEventListener('change',e=>handleFiles([...e.target.files]));
+    scaleEl.addEventListener('input',()=>{scaleLabel.textContent=scaleEl.value+'%';});
+    qualityEl.addEventListener('input',()=>{qualityLabel.textContent=qualityEl.value+'%';});
+    processBtn.addEventListener('click',async()=>{ if(queue.length===0){log('尚未選擇檔案');return;} log(`開始處理 ${queue.length} 個檔案…`);
+      const results=[]; for(const f of queue){const r=await processFile(f); if(r) results.push(r);}
+      if(results.length===1){ downloadBlob(results[0].blob,results[0].name); log(`完成：${results[0].name}`);}
+      else if(results.length>1){ const zip=new JSZip(); results.forEach(r=>zip.file(r.name,r.blob)); const content=await zip.generateAsync({type:'blob'}); saveAs(content,'images.zip'); log('全部完成 ✅ (已打包 ZIP)'); }
+    });
+    clearBtn.addEventListener('click',()=>{queue.length=0; thumbs.innerHTML=''; log('已清空佇列');});
+
+    // --- Base64 ---
+    document.getElementById("imgToBase64").addEventListener("change", e=>{
+      const file=e.target.files[0]; if(!file)return;
+      const reader=new FileReader(); reader.onload=evt=>{const base64=evt.target.result;
+        document.getElementById("base64Output").value=base64; document.getElementById("previewBase64Img").src=base64;};
+      reader.readAsDataURL(file);
+    });
+    function downloadBase64(){ const text=document.getElementById("base64Output").value; if(!text)return alert("沒有可下載的 Base64"); const blob=new Blob([text],{type:"text/plain"}); const link=document.createElement("a"); link.href=URL.createObjectURL(blob); link.download="image_base64.txt"; link.click(); }
+    function convertBase64ToImage(){ const base64=document.getElementById("base64Input").value.trim(); if(!base64)return alert("請貼上 Base64 字串"); document.getElementById("restoredImg").src=base64; const link=document.getElementById("downloadRestored"); link.href=base64; link.style.display="inline-block"; }
   </script>
 </body>
 </html>
