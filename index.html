@@ -7,6 +7,7 @@
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; background:#0b1020; color:#e7ecf3; }
     h1, h2 { text-align: center; }
+    /* 分頁按鈕 */
     .tabs { display: flex; justify-content: center; margin-bottom: 20px; flex-wrap:wrap; gap:10px; }
     .tab { padding: 10px 20px; cursor: pointer; border-radius:6px; background:#002366; color:#fff; font-weight:bold; }
     .tab.active { background:#0044aa; }
@@ -28,10 +29,13 @@
     .drop{border:2px dashed #2b3b66;border-radius:10px;padding:18px;text-align:center;color:#c7d2fe;background:#0d1330;margin-bottom:10px}
     .drop.dragover{outline:2px solid #5eead4}
     label{display:block;margin-top:10px;font-size:14px;color:#9aa4b2}
+
+    /* 深藍按鈕檔案選擇 */
     .file-btn {
       display:inline-block; padding:10px 20px; background:#002366; color:#fff; border-radius:6px; cursor:pointer; margin:5px 0; text-align:center;
     }
     .file-btn input[type=file]{ display:none; }
+
     @media(max-width:600px){
       body { margin:5px; }
       .card { margin:5px; padding:12px; }
@@ -48,11 +52,13 @@
 <body>
 <h1>Teng Image Tools</h1>
 
+<!-- 分頁切換 -->
 <div class="tabs">
   <div class="tab active" data-tab="resizer">尺寸格式調整</div>
   <div class="tab" data-tab="base64">Base64轉換</div>
 </div>
 
+<!-- 圖片尺寸調整 -->
 <div id="resizer" class="tab-content active">
   <section class="card">
     <h2>圖片尺寸/格式調整器</h2>
@@ -79,29 +85,28 @@
     </label>
 
     <label>長邊
-      <select id="longEdge">
+      <select id="width">
         <option value="0" selected>原尺寸</option>
         <option value="512">512</option>
         <option value="1024">1024</option>
         <option value="1280">1280</option>
         <option value="-1">自訂</option>
       </select>
-      <input type="number" id="longEdgeCustom" placeholder="自訂長邊" style="display:none; margin-top:5px;">        
+      <input type="number" id="widthCustom" placeholder="自訂長邊" style="display:none; margin-top:5px;">        
     </label>
     <label>短邊
-      <select id="shortEdge">
+      <select id="height">
         <option value="0" selected>原尺寸</option>
         <option value="512">512</option>
         <option value="1024">1024</option>
         <option value="1280">1280</option>
         <option value="-1">自訂</option>
       </select>
-      <input type="number" id="shortEdgeCustom" placeholder="自訂短邊" style="display:none; margin-top:5px;">
+      <input type="number" id="heightCustom" placeholder="自訂短邊" style="display:none; margin-top:5px;">
     </label>
 
     <label><input id="lock" type="checkbox" checked> 維持長寬比</label>
     <label>縮放比例 (%) <input id="scale" type="range" min="10" max="200" value="100"><span id="scaleLabel">100%</span></label>
-    <label>品質 (JPEG/WebP) <input id="quality" type="range" min="50" max="100" value="90"><span id="qualityLabel">90%</span></label>
 
     <h3>預覽</h3>
     <div id="thumbs" class="thumbs"></div>
@@ -110,6 +115,7 @@
   </section>
 </div>
 
+<!-- Base64 轉換 -->
 <div id="base64" class="tab-content">
   <section class="card">
     <h2>圖片 → Base64</h2>
@@ -138,7 +144,7 @@
 <script>
 const picaInstance = window.pica({features:['js','wasm','cib']});
 
-// 分頁切換
+// ---------- 分頁切換 ----------
 document.querySelectorAll(".tab").forEach(tab=>{
   tab.addEventListener("click",()=>{
     document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
@@ -148,23 +154,26 @@ document.querySelectorAll(".tab").forEach(tab=>{
   });
 });
 
-// 自訂欄位顯示
-document.getElementById("longEdge").addEventListener("change", e=>{
-  document.getElementById("longEdgeCustom").style.display = e.target.value == "-1" ? "block" : "none";
+// ---------- 手機自訂長短邊 ----------
+document.getElementById("height").addEventListener("change", e=>{
+  document.getElementById("heightCustom").style.display = e.target.value == "-1" ? "block" : "none";
 });
-document.getElementById("shortEdge").addEventListener("change", e=>{
-  document.getElementById("shortEdgeCustom").style.display = e.target.value == "-1" ? "block" : "none";
+document.getElementById("width").addEventListener("change", e=>{
+  document.getElementById("widthCustom").style.display = e.target.value == "-1" ? "block" : "none";
 });
 
-// 縮放/品質顯示
+// ---------- 縮放/比例顯示 ----------
 document.getElementById("scale").addEventListener("input", e=>{
   document.getElementById("scaleLabel").textContent = e.target.value + "%";
+  updateThumbSizes();
 });
-document.getElementById("quality").addEventListener("input", e=>{
-  document.getElementById("qualityLabel").textContent = e.target.value + "%";
-});
+document.getElementById("lock").addEventListener("input", updateThumbSizes);
+document.getElementById("width").addEventListener("input", updateThumbSizes);
+document.getElementById("widthCustom").addEventListener("input", updateThumbSizes);
+document.getElementById("height").addEventListener("input", updateThumbSizes);
+document.getElementById("heightCustom").addEventListener("input", updateThumbSizes);
 
-// 日誌
+// ---------- 日誌 ----------
 const logEl = document.getElementById("log");
 function log(msg){ 
   const time=new Date().toLocaleTimeString(); 
@@ -172,18 +181,18 @@ function log(msg){
   logEl.scrollTop=logEl.scrollHeight;
 }
 
-// 縮圖預覽
+// ---------- 縮圖與 Base64 ----------
 const thumbs = document.getElementById("thumbs");
 const queue = [];
-function addThumb(src,name,origW,origH,newW,newH){
+function addThumb(src,name,w,h){
   const div = document.createElement('div'); div.className='thumb';
-  const img = new Image(); img.src=src; div.appendChild(img);
+  const img = new Image(); img.src=src; img.dataset.origW=w || 0; img.dataset.origH=h || 0; div.appendChild(img);
   const meta = document.createElement('div'); meta.className='meta';
-  meta.innerHTML=`${name}<br>原尺寸: ${origW}×${origH}px<br>修改後: ${newW}×${newH}px`; div.appendChild(meta);
+  meta.innerHTML=`${name}<br>${w}×${h}px → —×—`; div.appendChild(meta);
   thumbs.appendChild(div);
 }
 
-// 拖放與檔案
+// ---------- 拖放與檔案 ----------
 const drop=document.getElementById('drop');
 drop.addEventListener('dragover', e=>{e.preventDefault(); drop.classList.add('dragover');});
 drop.addEventListener('dragleave', e=>{e.preventDefault(); drop.classList.remove('dragover');});
@@ -193,62 +202,108 @@ document.getElementById('fileFolder').addEventListener('change', e=>handleFiles(
 
 async function handleFiles(list){
   for(const file of list){
-    queue.push(file);
-    addThumb(URL.createObjectURL(file),file.name,'—','—','—','—');
+    const imgData = await loadImageData(file);
+    queue.push({file, origW: imgData.width, origH: imgData.height});
+    addThumb(URL.createObjectURL(file),file.name,imgData.width,imgData.height);
   }
   log(`加入 ${list.length} 個檔案`);
+  updateThumbSizes();
 }
 
-// ---------- 處理圖片 ----------
-function calcTargetSize(srcW,srcH){
-  let w=srcW, h=srcH;
-  const longSel = Number(document.getElementById('longEdge').value);
-  const longCustom = Number(document.getElementById('longEdgeCustom').value);
-  const shortSel = Number(document.getElementById('shortEdge').value);
-  const shortCustom = Number(document.getElementById('shortEdgeCustom').value);
+async function loadImageData(file){
+  return new Promise((res,rej)=>{
+    const img = new Image();
+    img.onload=()=>res({width:img.naturalWidth,height:img.naturalHeight});
+    img.onerror=rej;
+    img.src = URL.createObjectURL(file);
+  });
+}
 
-  let longTarget = (longSel==-1 && longCustom>0)? longCustom : (longSel>0? longSel : null);
-  let shortTarget = (shortSel==-1 && shortCustom>0)? shortCustom : (shortSel>0? shortSel : null);
-  const aspect = srcW/srcH;
+// ---------- 計算目標尺寸 ----------
+function calcTargetSize(origW,origH){
+  let w=origW, h=origH;
+  const widthSel = Number(document.getElementById('width').value);
+  const widthCustom = Number(document.getElementById('widthCustom').value);
+  const heightSel = Number(document.getElementById('height').value);
+  const heightCustom = Number(document.getElementById('heightCustom').value);
+  const scale = Number(document.getElementById('scale').value)/100;
+  const lock = document.getElementById('lock').checked;
 
-  if(longTarget && shortTarget){
-    if(aspect>=1){ w=longTarget; h=Math.round(w/aspect); if(h>shortTarget){ h=shortTarget; w=Math.round(h*aspect); } }
-    else { h=longTarget; w=Math.round(h*aspect); if(w>shortTarget){ w=shortTarget; h=Math.round(w/aspect); } }
-  } else if(longTarget){
-    if(aspect>=1){ w=longTarget; h=Math.round(w/aspect); } else { h=longTarget; w=Math.round(h*aspect); }
-  } else if(shortTarget){
-    if(aspect>=1){ h=shortTarget; w=Math.round(h*aspect); } else { w=shortTarget; h=Math.round(w/aspect); }
+  let useLongShort = widthSel!==0 || widthSel===-1 || heightSel!==0 || heightSel===-1;
+
+  if(useLongShort && scale!==1){
+    log('⚠️ 長短邊與縮放比例同時設定，縮放比例將被忽略');
   }
 
-  const scale = Number(document.getElementById('scale').value)/100;
-  w = Math.round(w*scale); h = Math.round(h*scale);
+  // 判斷長短邊方向
+  const isPortrait = origH>=origW;
+  let long = isPortrait ? origH : origW;
+  let short = isPortrait ? origW : origH;
+
+  if(widthSel>0 && widthSel!==-1) long=widthSel;
+  if(widthSel===-1 && widthCustom>0) long=widthCustom;
+  if(heightSel>0 && heightSel!==-1) short=heightSel;
+  if(heightSel===-1 && heightCustom>0) short=heightCustom;
+
+  if(isPortrait){ h=long; w=short; } else { w=long; h=short; }
+  if(!useLongShort){ w=Math.round(origW*scale); h=Math.round(origH*scale); }
+  if(lock){ 
+    const ratio = origW/origH;
+    if(w/h>ratio){ w=Math.round(h*ratio); } else { h=Math.round(w/ratio); }
+  }
   return {w,h};
 }
 
-const pica = window.pica({features:['js','wasm','cib']});
-function guessMime(name,original){ const fmt=document.getElementById('format').value; if(fmt!='keep') return fmt; const ext=name.split('.').pop().toLowerCase(); return {'jpg':'image/jpeg','jpeg':'image/jpeg','png':'image/png','webp':'image/webp'}[ext]||original||'image/jpeg'; }
-async function readAsImage(blob){ return new Promise((res,rej)=>{ const url=URL.createObjectURL(blob); const img=new Image(); img.onload=()=>{URL.revokeObjectURL(url); res(img);}; img.onerror=rej; img.src=url; }); }
+// ---------- 即時刷新縮圖尺寸 ----------
+function updateThumbSizes(){
+  thumbs.querySelectorAll('.thumb').forEach((div,i)=>{
+    const img = div.querySelector('img');
+    const meta = div.querySelector('.meta');
+    const origW = img.naturalWidth || img.dataset.origW;
+    const origH = img.naturalHeight || img.dataset.origH;
+    const {w,h} = calcTargetSize(origW,origH);
+    meta.innerHTML = `${queue[i]?.file.name || '圖片'}<br>原尺寸 ${origW}×${origH}px → ${w}×${h}px`;
+  });
+}
 
-async function processFile(file){
+// ---------- 處理圖片 ----------
+function guessMime(name,original){
+  const fmt = document.getElementById('format').value;
+  if(fmt!='keep') return fmt;
+  const ext = (name.split('.').pop()||'').toLowerCase();
+  const map = {jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',webp:'image/webp'};
+  return map[ext]||original||'image/jpeg';
+}
+
+async function readAsImage(blob){
+  return new Promise((res,rej)=>{
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload=()=>{URL.revokeObjectURL(url); res(img);};
+    img.onerror=rej;
+    img.src=url;
+  });
+}
+
+async function processFile(item){
   try{
-    let f=file;
+    let file = item.file;
     if(file.name.toLowerCase().endsWith(".heic")||file.name.toLowerCase().endsWith(".heif")){
       const blob = await heic2any({blob:file,toType:"image/png"});
-      f = new File([blob],file.name.replace(/\.(heic|heif)$/i,'.png'),{type:"image/png"});
+      file = new File([blob],file.name.replace(/\.(heic|heif)$/i,'.png'),{type:"image/png"});
     }
-    const img = await readAsImage(f);
+    const img = await readAsImage(file);
     const {w,h} = calcTargetSize(img.naturalWidth,img.naturalHeight);
     const canvas = document.createElement('canvas'); canvas.width=w; canvas.height=h;
-    await pica.resize(img,canvas,{quality:3,alpha:true});
-    const mime = guessMime(f.name,f.type);
-    const quality = Number(document.getElementById('quality').value)/100;
-    const outBlob = await pica.toBlob(canvas,mime,(mime.includes('jpeg')||mime.includes('webp'))?quality:undefined);
+    await picaInstance.resize(img,canvas,{quality:3,alpha:true});
+    const mime = guessMime(file.name,file.type);
+    const quality = 0.9;
+    const outBlob = await picaInstance.toBlob(canvas,mime,(mime.includes('jpeg')||mime.includes('webp'))?quality:undefined);
     const extMap={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'};
     const ext = extMap[mime]||'jpg';
     const outName = `${file.name.replace(/\.[^.]+$/,'')}_${w}x${h}.${ext}`;
-    addThumb(URL.createObjectURL(outBlob),file.name,img.naturalWidth,img.naturalHeight,w,h);
     return {blob:outBlob,name:outName,w,h};
-  }catch(e){ log(`錯誤：${file.name} → ${e}`); return null;}
+  }catch(e){ log(`錯誤：${item.file.name} → ${e}`); return null;}
 }
 
 document.getElementById('process').addEventListener('click', async()=>{
@@ -266,79 +321,6 @@ document.getElementById('process').addEventListener('click', async()=>{
 
 function downloadBlob(blob,name){ const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(url),2000);}
 document.getElementById('clear').addEventListener('click',()=>{queue.length=0; thumbs.innerHTML=''; log('已清空佇列');});
-
-// Base64功能保持不變
-const base64Output = document.getElementById('base64Output');
-const previewBase64Img = document.getElementById('previewBase64Img');
-const base64File = document.getElementById('base64File');
-const base64Input = document.getElementById('base64Input');
-const restoredImg = document.getElementById('restoredImg');
-const downloadRestored = document.getElementById('downloadRestored');
-const progressContainer = document.getElementById('progressContainer');
-const progressBar = document.getElementById('progressBar');
-
-function showProgress(){
-  progressContainer.style.display='block';
-  progressBar.style.width='0%'; progressBar.textContent='0%';
-  let progress=0;
-  const interval = setInterval(()=>{ progress+=20; if(progress>=90) clearInterval(interval); progressBar.style.width=progress+'%'; progressBar.textContent=progress+'%'; },200);
-}
-function hideProgress(){ progressBar.style.width='100%'; progressBar.textContent='100%'; setTimeout(()=>{progressContainer.style.display='none';},500); }
-
-document.getElementById('imgToBase64').addEventListener('change', e=>{
-  const file = e.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = evt=>{
-    base64Output.value = evt.target.result.split(',')[1];
-    previewBase64Img.src = evt.target.result;
-  };
-  reader.readAsDataURL(file);
-});
-
-document.getElementById('downloadBase64Btn').addEventListener('click', ()=>{
-  const blob = new Blob([base64Output.value],{type:'text/plain'});
-  downloadBlob(blob,'image_base64.txt');
-});
-
-base64File.addEventListener('change', e=>{
-  const file = e.target.files[0]; if(!file) return;
-  const reader = new FileReader();
-  showProgress();
-  reader.onload = evt=>{
-    base64Input.value = evt.target.result.trim();
-    convertBase64ToImage();
-  };
-  reader.readAsText(file);
-});
-
-base64Input.addEventListener('input', ()=>{
-  if(base64Input.value.trim()!==''){ showProgress(); convertBase64ToImage(); }
-});
-
-function detectFormat(base64){
-  if(base64.startsWith("iVBORw0KGgo")) return "png";
-  if(base64.startsWith("/9j/")) return "jpeg";
-  if(base64.startsWith("UklGR")) return "webp";
-  return "png";
-}
-
-function convertBase64ToImage(){
-  let raw = base64Input.value.trim(); if(!raw) return;
-  let format, base64 = raw;
-  if(!raw.startsWith("data:image/")){
-    format = detectFormat(raw);
-    base64 = `data:image/${format};base64,` + raw;
-  } else {
-    const match = raw.match(/^data:image\/(png|jpeg|jpg|webp);base64,/);
-    format = match ? match[1] : "png"; base64 = raw;
-  }
-  restoredImg.onload = ()=>hideProgress();
-  restoredImg.src = base64;
-  downloadRestored.href = base64;
-  downloadRestored.download = "restored."+format;
-  downloadRestored.style.display='inline-block';
-}
 </script>
 </body>
 </html>
