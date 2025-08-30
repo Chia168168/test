@@ -19,10 +19,6 @@
             flex-direction: column;
             gap: 20px;
         }
-        .preview {
-            max-width: 100%;
-            max-height: 400px;
-        }
         .controls {
             display: flex;
             flex-wrap: wrap;
@@ -40,6 +36,17 @@
             overflow-y: auto;
             border: 1px solid #ccc;
             padding: 10px;
+        }
+        .thumbnail-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .thumbnail {
+            max-width: 150px;
+            max-height: 150px;
+            object-fit: contain;
+            border: 1px solid #ccc;
         }
     </style>
 </head>
@@ -59,6 +66,14 @@
         </div>
         
         <div class="controls">
+            <div>
+                <label>尺寸設定:</label>
+                <select id="dimensionMode">
+                    <option value="both">寬度與高度</option>
+                    <option value="width">固定寬度</option>
+                    <option value="height">固定高度</option>
+                </select>
+            </div>
             <div>
                 <label>寬度 (px):</label>
                 <input type="number" id="widthInput" min="1" placeholder="原始寬度">
@@ -90,8 +105,8 @@
         <button onclick="processImages()">處理圖片</button>
         
         <div>
-            <h3>預覽（顯示第一張）:</h3>
-            <img id="preview" class="preview">
+            <h3>縮圖預覽:</h3>
+            <div id="previewContainer" class="thumbnail-container"></div>
         </div>
         
         <div>
@@ -114,7 +129,7 @@
             originalImages = [];
             processedBlobs = [];
             document.getElementById('fileList').innerHTML = '';
-            document.getElementById('preview').src = '';
+            document.getElementById('previewContainer').innerHTML = '';
 
             Array.from(files).forEach((file, index) => {
                 const listItem = document.createElement('div');
@@ -153,8 +168,14 @@
                 if (index === 0) {
                     document.getElementById('widthInput').placeholder = img.width;
                     document.getElementById('heightInput').placeholder = img.height;
-                    document.getElementById('preview').src = img.src;
                 }
+                // 顯示縮圖
+                const thumbnail = document.createElement('img');
+                thumbnail.src = imageSrc;
+                thumbnail.className = 'thumbnail';
+                thumbnail.dataset.index = index;
+                thumbnail.title = file.name;
+                document.getElementById('previewContainer').appendChild(thumbnail);
             };
             img.onerror = function() {
                 alert(`無法載入圖片：${file.name}，請確認檔案格式是否正確！`);
@@ -162,25 +183,30 @@
             img.src = imageSrc;
         }
 
-        document.getElementById('widthInput').addEventListener('input', function() {
-            if (document.getElementById('aspectRatio').checked && originalImages[0]) {
-                const width = parseInt(this.value);
-                if (width > 0) {
-                    const ratio = originalImages[0].img.height / originalImages[0].img.width;
-                    document.getElementById('heightInput').value = Math.round(width * ratio);
-                }
-            }
-        });
+        document.getElementById('widthInput').addEventListener('input', updateDimensions);
+        document.getElementById('heightInput').addEventListener('input', updateDimensions);
+        document.getElementById('dimensionMode').addEventListener('change', updateDimensions);
 
-        document.getElementById('heightInput').addEventListener('input', function() {
-            if (document.getElementById('aspectRatio').checked && originalImages[0]) {
-                const height = parseInt(this.value);
-                if (height > 0) {
-                    const ratio = originalImages[0].img.width / originalImages[0].img.height;
-                    document.getElementById('widthInput').value = Math.round(height * ratio);
+        function updateDimensions() {
+            if (!originalImages[0] || !document.getElementById('aspectRatio').checked) return;
+
+            const mode = document.getElementById('dimensionMode').value;
+            const width = parseInt(document.getElementById('widthInput').value);
+            const height = parseInt(document.getElementById('heightInput').value);
+            const ratio = originalImages[0].img.height / originalImages[0].img.width;
+
+            if (mode === 'width' && width > 0) {
+                document.getElementById('heightInput').value = Math.round(width * ratio);
+            } else if (mode === 'height' && height > 0) {
+                document.getElementById('widthInput').value = Math.round(height / ratio);
+            } else if (mode === 'both') {
+                if (width > 0) {
+                    document.getElementById('heightInput').value = Math.round(width * ratio);
+                } else if (height > 0) {
+                    document.getElementById('widthInput').value = Math.round(height / ratio);
                 }
             }
-        });
+        }
 
         async function processImages() {
             if (originalImages.length === 0) {
@@ -190,6 +216,7 @@
 
             const format = document.getElementById('formatSelect').value;
             const quality = parseInt(document.getElementById('qualityInput').value) / 100;
+            const mode = document.getElementById('dimensionMode').value;
             const widthInput = parseInt(document.getElementById('widthInput').value);
             const heightInput = parseInt(document.getElementById('heightInput').value);
             processedBlobs = [];
@@ -201,8 +228,20 @@
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
 
-                const width = widthInput || img.width;
-                const height = heightInput || img.height;
+                let width = widthInput || img.width;
+                let height = heightInput || img.height;
+
+                if (document.getElementById('aspectRatio').checked) {
+                    const ratio = img.height / img.width;
+                    if (mode === 'width' && widthInput) {
+                        height = Math.round(widthInput * ratio);
+                    } else if (mode === 'height' && heightInput) {
+                        width = Math.round(heightInput / ratio);
+                    } else if (!widthInput && !heightInput) {
+                        width = img.width;
+                        height = img.height;
+                    }
+                }
 
                 canvas.width = width;
                 canvas.height = height;
@@ -221,8 +260,10 @@
                     zip.file(newFileName, blob);
                 }
 
-                if (i === 0) {
-                    document.getElementById('preview').src = URL.createObjectURL(blob);
+                // 更新縮圖
+                const thumbnail = document.querySelector(`.thumbnail[data-index="${i}"]`);
+                if (thumbnail) {
+                    thumbnail.src = URL.createObjectURL(blob);
                 }
             }
 
