@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TENG 圖片尺寸調整與格式轉換工具 v1.0</title>
+    <title>TENG 圖片尺寸調整與格式轉換工具 v1.1</title>
     <script src="https://unpkg.com/heic2any@0.0.4/dist/heic2any.min.js"></script>
     <script src="https://unpkg.com/jszip@3.10.1/dist/jszip.min.js"></script>
     <script src="https://unpkg.com/file-saver@2.0.5/dist/FileSaver.min.js"></script>
@@ -51,11 +51,16 @@
         .hidden {
             display: none;
         }
+        button {
+            font-size: 18px;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>TENG 圖片尺寸調整與格式轉換工具 v1.0</h1>
+        <h1>TENG 圖片尺寸調整與格式轉換工具 v1.1</h1>
         
         <div>
             <label>選擇檔案或資料夾:</label><br>
@@ -71,13 +76,13 @@
         <div class="controls">
             <div>
                 <label>尺寸設定:</label>
-                <select id="dimensionMode">
+                <select id="dimensionMode" onchange="toggleDimensionInputs()">
                     <option value="width" selected>固定寬度</option>
                     <option value="height">固定高度</option>
                     <option value="both">寬度與高度</option>
                 </select>
             </div>
-            <div>
+            <div id="widthContainer">
                 <label>寬度 (px):</label>
                 <select id="widthSelect" onchange="toggleCustomInput('width')">
                     <option value="256">256</option>
@@ -88,7 +93,7 @@
                 </select>
                 <input type="number" id="widthInput" min="1" class="hidden" placeholder="輸入寬度">
             </div>
-            <div>
+            <div id="heightContainer" class="hidden">
                 <label>高度 (px):</label>
                 <select id="heightSelect" onchange="toggleCustomInput('height')">
                     <option value="256">256</option>
@@ -119,7 +124,7 @@
         
         <p class="note">注意：目前僅支援 JPEG、PNG 和 WebP 作為輸出格式。HEIC/HEIF 輸入已支援，但輸出需要後端處理。多檔案處理將自動打包為 ZIP 檔案。</p>
         
-        <button onclick="processImages()">處理圖片</button>
+        <button onclick="processImages()">開始執行</button>
         
         <div>
             <h3>縮圖預覽:</h3>
@@ -135,20 +140,25 @@
         let originalImages = [];
         let processedBlobs = [];
 
-        // 處理檔案輸入（單檔案或多檔案）
-        document.getElementById('imageInput').addEventListener('change', handleFileSelect);
-        document.getElementById('folderInput').addEventListener('change', handleFileSelect);
+        // 處理檔案輸入（允許追加檔案）
+        document.getElementById('imageInput').addEventListener('change', e => handleFileSelect(e, true));
+        document.getElementById('folderInput').addEventListener('change', e => handleFileSelect(e, true));
 
-        function handleFileSelect(e) {
+        function handleFileSelect(e, append = false) {
             const files = e.target.files;
             if (!files || files.length === 0) return;
 
-            originalImages = [];
-            processedBlobs = [];
-            document.getElementById('fileList').innerHTML = '';
-            document.getElementById('previewContainer').innerHTML = '';
+            if (!append) {
+                originalImages = [];
+                processedBlobs = [];
+                document.getElementById('fileList').innerHTML = '';
+                document.getElementById('previewContainer').innerHTML = '';
+            }
 
             Array.from(files).forEach((file, index) => {
+                // 避免重複檔案
+                if (originalImages.some(img => img.file.name === file.name && img.file.size === file.size)) return;
+
                 const listItem = document.createElement('div');
                 listItem.textContent = file.name;
                 document.getElementById('fileList').appendChild(listItem);
@@ -158,20 +168,20 @@
                 if (isHeicHeif) {
                     heic2any({ blob: file, toType: 'image/png' })
                         .then(result => {
-                            handleImageLoad(file, URL.createObjectURL(result), index);
+                            handleImageLoad(file, URL.createObjectURL(result), originalImages.length);
                         })
                         .catch(err => {
                             console.warn(`HEIC/HEIF 轉換失敗 (${file.name})，嘗試作為其他格式處理:`, err);
                             const reader = new FileReader();
                             reader.onload = function(e) {
-                                handleImageLoad(file, e.target.result, index);
+                                handleImageLoad(file, e.target.result, originalImages.length);
                             };
                             reader.readAsDataURL(file);
                         });
                 } else {
                     const reader = new FileReader();
                     reader.onload = function(e) {
-                        handleImageLoad(file, e.target.result, index);
+                        handleImageLoad(file, e.target.result, originalImages.length);
                     };
                     reader.readAsDataURL(file);
                 }
@@ -181,7 +191,7 @@
         function handleImageLoad(file, imageSrc, index) {
             const img = new Image();
             img.onload = function() {
-                originalImages[index] = { file, img };
+                originalImages.push({ file, img });
                 if (index === 0) {
                     updateDimensionInputs();
                 }
@@ -189,7 +199,7 @@
                 const thumbnail = document.createElement('img');
                 thumbnail.src = imageSrc;
                 thumbnail.className = 'thumbnail';
-                thumbnail.dataset.index = index;
+                thumbnail.dataset.index = originalImages.length - 1;
                 thumbnail.title = file.name;
                 document.getElementById('previewContainer').appendChild(thumbnail);
             };
@@ -208,9 +218,18 @@
             }
         }
 
+        function toggleDimensionInputs() {
+            const mode = document.getElementById('dimensionMode').value;
+            document.getElementById('widthContainer').classList.toggle('hidden', mode === 'height');
+            document.getElementById('heightContainer').classList.toggle('hidden', mode === 'width');
+            updateDimensionInputs();
+            updateDimensions();
+        }
+
         document.getElementById('widthInput').addEventListener('input', updateDimensions);
         document.getElementById('heightInput').addEventListener('input', updateDimensions);
-        document.getElementById('dimensionMode').addEventListener('change', updateDimensions);
+        document.getElementById('widthSelect').addEventListener('change', updateDimensions);
+        document.getElementById('heightSelect').addEventListener('change', updateDimensions);
 
         function updateDimensionInputs() {
             if (!originalImages[0]) return;
