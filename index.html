@@ -4,222 +4,201 @@
   <meta charset="UTF-8">
   <title>圖片 ↔ Base64 工具</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; text-align: center; }
-    h1 { color: #003366; }
-    .tab-container { margin-bottom: 20px; }
-    .tab-button {
-      background-color: #003366;
-      color: white;
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f8f9fa; }
+    h1 { text-align: center; }
+
+    /* 分頁按鈕 */
+    .tab-buttons { text-align: center; margin-bottom: 20px; }
+    .tab-buttons button {
+      display: inline-block;
+      width: 45%;
+      margin: 0 5px;
+      padding: 12px;
       font-size: 18px;
-      padding: 12px 24px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      margin: 5px;
-      width: 180px;
-    }
-    .tab-button.active { background-color: #0056b3; }
-    .button {
-      background-color: #007BFF;
+      font-weight: bold;
+      background: #003366;
       color: white;
-      font-size: 16px;
-      padding: 10px 18px;
       border: none;
       border-radius: 6px;
       cursor: pointer;
-      margin: 5px;
     }
-    .button:hover { background-color: #0056b3; }
-    #preview { margin-top: 20px; max-width: 90%; }
-    select, input { font-size: 16px; margin-top: 10px; }
-    #sizeHint { margin-top: 8px; color: #444; font-size: 15px; }
+    .tab-buttons button.active { background: #0055aa; }
+
+    /* 功能分頁 */
+    .tab { display: none; }
+    .tab.active { display: block; }
+
+    /* 輸出區 */
+    .thumbs { display: flex; flex-wrap: wrap; margin-top: 20px; }
+    .thumb { border: 1px solid #ccc; margin: 5px; padding: 5px; text-align: center; }
+    .thumb img { max-width: 150px; max-height: 150px; display: block; margin-bottom: 5px; }
+    .meta { font-size: 12px; color: #333; }
+
+    /* 大藍按鈕 */
+    button.big {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      margin-top: 10px;
+      font-size: 18px;
+      font-weight: bold;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button.big:hover { background: #0056b3; }
+    label { display:block; margin-top:10px; }
   </style>
 </head>
 <body>
-  <h1>圖片 ↔ Base64 工具</h1>
+  <h1>📷 圖片 ↔ Base64 工具</h1>
 
   <!-- 分頁按鈕 -->
-  <div class="tab-container">
-    <button class="tab-button active" onclick="switchTab('img2base64')">圖片 → Base64</button>
-    <button class="tab-button" onclick="switchTab('base642img')">Base64 → 圖片</button>
+  <div class="tab-buttons">
+    <button class="tab-btn active" data-tab="tab1">圖片 ↔ Base64</button>
+    <button class="tab-btn" data-tab="tab2">尺寸格式調整</button>
   </div>
 
-  <!-- 圖片 → Base64 -->
-  <div id="img2base64" class="tab-content">
-    <input type="file" id="fileInput" class="button" accept="image/*" value="選擇檔案">
-    <button class="button" onclick="clearAll()">清空</button>
-    <br><br>
-
-    <!-- 輸出尺寸 -->
-    <label for="resizeMode">輸出尺寸：</label>
-    <select id="resizeMode">
-      <optgroup label="長邊">
-        <option value="long-original">原尺寸</option>
-        <option value="long-512">512</option>
-        <option value="long-1024">1024</option>
-        <option value="long-1280">1280</option>
-        <option value="long-custom">自訂</option>
-      </optgroup>
-      <optgroup label="短邊">
-        <option value="short-original">原尺寸</option>
-        <option value="short-512">512</option>
-        <option value="short-1024">1024</option>
-        <option value="short-1280">1280</option>
-        <option value="short-custom">自訂</option>
-      </optgroup>
-    </select>
-
-    <input type="number" id="customSize" placeholder="輸入自訂尺寸" style="display:none; margin-top:5px;">
-    <div id="sizeHint">尚未選擇圖片</div>
-
-    <br><br>
-    <button class="button" onclick="convertToBase64()">轉換</button>
-
-    <!-- 預覽 -->
+  <!-- Tab 1 -->
+  <div id="tab1" class="tab active">
+    <input type="file" id="fileInput1" multiple>
+    <button class="big" onclick="convertToBase64()">轉換成 Base64</button>
+    <textarea id="base64Output" rows="10" style="width:100%;margin-top:10px;"></textarea>
+    <button class="big" onclick="convertToImage()">Base64 ➝ 圖片</button>
     <div id="preview"></div>
-    <button id="downloadBtn" class="button" style="display:none;" onclick="downloadImage()">下載縮放後圖片</button>
   </div>
 
-  <!-- Base64 → 圖片 -->
-  <div id="base642img" class="tab-content" style="display:none;">
-    <textarea id="base64Input" placeholder="貼上 Base64" style="width:90%;height:120px;"></textarea><br>
-    <button class="button" onclick="convertToImage()">轉換</button>
-    <div id="preview2"></div>
+  <!-- Tab 2 -->
+  <div id="tab2" class="tab">
+    <input type="file" id="fileInput2" multiple>
+    <label>輸出品質:
+      <input type="range" id="quality" min="10" max="100" value="90">
+    </label>
+
+    <label>長邊
+      <select id="longSide">
+        <option value="0" selected>原尺寸</option>
+        <option value="512">512</option>
+        <option value="1024">1024</option>
+        <option value="1280">1280</option>
+        <option value="-1">自訂</option>
+      </select>
+      <input type="number" id="longSideCustom" placeholder="自訂長邊" style="display:none; margin-top:5px;">
+    </label>
+
+    <label>短邊
+      <select id="shortSide">
+        <option value="0" selected>原尺寸</option>
+        <option value="512">512</option>
+        <option value="1024">1024</option>
+        <option value="1280">1280</option>
+        <option value="-1">自訂</option>
+      </select>
+      <input type="number" id="shortSideCustom" placeholder="自訂短邊" style="display:none; margin-top:5px;">
+    </label>
+
+    <button class="big" onclick="processImages()">開始處理</button>
+    <div class="thumbs" id="thumbs"></div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/pica@8.0.0/dist/pica.min.js"></script>
   <script>
-    function switchTab(tab) {
-      document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
-      document.getElementById(tab).style.display = 'block';
-      document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
-      event.target.classList.add('active');
-    }
+    const picaInstance = pica();
 
-    const fileInput = document.getElementById('fileInput');
-    const preview = document.getElementById('preview');
-    const sizeHint = document.getElementById('sizeHint');
-    const downloadBtn = document.getElementById('downloadBtn');
-    let loadedImg = null; 
-    let latestResizedBase64 = null; 
-
-    document.getElementById('resizeMode').addEventListener('change', updatePreview);
-    document.getElementById('customSize').addEventListener('input', updatePreview);
-    fileInput.addEventListener('change', () => {
-      const file = fileInput.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        loadedImg = new Image();
-        loadedImg.onload = updatePreview;
-        loadedImg.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
+    // 分頁切換
+    document.querySelectorAll('.tab-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        document.querySelectorAll('.tab').forEach(tab=>tab.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+        document.getElementById(btn.dataset.tab).classList.add('active');
+        btn.classList.add('active');
+      });
     });
 
-    function clearAll() {
-      fileInput.value = "";
-      preview.innerHTML = "";
-      document.getElementById('customSize').value = "";
-      sizeHint.innerText = "尚未選擇圖片";
-      loadedImg = null;
-      latestResizedBase64 = null;
-      downloadBtn.style.display = "none";
-    }
-
-    function calcTargetSize(originalW, originalH) {
-      const mode = document.getElementById('resizeMode').value;
-      const customValue = Number(document.getElementById('customSize').value);
-
-      let targetW = originalW;
-      let targetH = originalH;
-
-      if (mode.startsWith("long")) {
-        let size = getSizeFromMode(mode, customValue);
-        if (size > 0) {
-          if (originalW >= originalH) {
-            targetW = size;
-            targetH = Math.round(originalH * (size / originalW));
-          } else {
-            targetH = size;
-            targetW = Math.round(originalW * (size / originalH));
-          }
-        }
-      } else if (mode.startsWith("short")) {
-        let size = getSizeFromMode(mode, customValue);
-        if (size > 0) {
-          if (originalW <= originalH) {
-            targetW = size;
-            targetH = Math.round(originalH * (size / originalW));
-          } else {
-            targetH = size;
-            targetW = Math.round(originalW * (size / originalH));
-          }
-        }
-      }
-      return { w: targetW, h: targetH };
-    }
-
-    function getSizeFromMode(mode, customValue) {
-      document.getElementById('customSize').style.display =
-        mode.endsWith("custom") ? "block" : "none";
-
-      if (mode.endsWith("original")) return 0;
-      if (mode.endsWith("512")) return 512;
-      if (mode.endsWith("1024")) return 1024;
-      if (mode.endsWith("1280")) return 1280;
-      if (mode.endsWith("custom")) return customValue > 0 ? customValue : 0;
-      return 0;
-    }
-
-    function updatePreview() {
-      if (!loadedImg) {
-        sizeHint.innerText = "尚未選擇圖片";
-        preview.innerHTML = "";
-        downloadBtn.style.display = "none";
-        return;
-      }
-      const { w, h } = calcTargetSize(loadedImg.width, loadedImg.height);
-      sizeHint.innerText = `原始尺寸：${loadedImg.width} × ${loadedImg.height} → 輸出尺寸：${w} × ${h}`;
-
-      const canvas = document.createElement("canvas");
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(loadedImg, 0, 0, w, h);
-      latestResizedBase64 = canvas.toDataURL("image/png");
-
-      preview.innerHTML = `<img src="${latestResizedBase64}" style="max-width:100%; margin-top:10px;">`;
-      downloadBtn.style.display = "inline-block";
-    }
-
-    function convertToBase64() {
-      if (!loadedImg) return alert("請先選擇圖片");
-      updatePreview(); 
-      preview.innerHTML = `<textarea style="width:90%;height:150px;">${latestResizedBase64}</textarea><br><img src="${latestResizedBase64}" style="max-width:100%; margin-top:10px;">`;
-      downloadBtn.style.display = "inline-block";
-    }
-
-    function convertToImage() {
-      const base64Text = document.getElementById('base64Input').value.trim();
-      if (!base64Text) return alert("請先輸入 Base64");
-      let base64 = base64Text;
-      if (!base64.startsWith("data:image")) {
-        base64 = "data:image/png;base64," + base64;
-      }
-      const img = new Image();
-      img.onload = function() {
-        document.getElementById('preview2').innerHTML = "";
-        document.getElementById('preview2').appendChild(img);
+    // Base64 轉換
+    function convertToBase64(){
+      const files = document.getElementById('fileInput1').files;
+      if(!files.length) return alert("請選擇圖片");
+      const reader = new FileReader();
+      reader.onload = e=>{
+        document.getElementById('base64Output').value = e.target.result;
       };
-      img.src = base64;
+      reader.readAsDataURL(files[0]);
+    }
+    function convertToImage(){
+      let base64 = document.getElementById('base64Output').value.trim();
+      if(!base64) return alert("請貼上 Base64 字串");
+      if(!base64.startsWith("data:image")) base64 = "data:image/png;base64," + base64;
+      const img = new Image(); img.src = base64;
+      document.getElementById('preview').innerHTML="";
+      document.getElementById('preview').appendChild(img);
     }
 
-    function downloadImage() {
-      if (!latestResizedBase64) return alert("沒有可下載的圖片");
-      const a = document.createElement("a");
-      a.href = latestResizedBase64;
-      a.download = "resized_image.png";
-      a.click();
+    // 自訂長短邊顯示
+    document.getElementById("longSide").addEventListener("change", e=>{
+      document.getElementById("longSideCustom").style.display = e.target.value == "-1" ? "block" : "none";
+    });
+    document.getElementById("shortSide").addEventListener("change", e=>{
+      document.getElementById("shortSideCustom").style.display = e.target.value == "-1" ? "block" : "none";
+    });
+
+    function calcTargetSize(srcW,srcH){
+      let w=srcW,h=srcH;
+      const longSel = Number(document.getElementById('longSide').value);
+      const longCustom = Number(document.getElementById('longSideCustom').value);
+      const shortSel = Number(document.getElementById('shortSide').value);
+      const shortCustom = Number(document.getElementById('shortSideCustom').value);
+
+      let long = Math.max(w,h);
+      let short = Math.min(w,h);
+
+      if(longSel>0 && longSel!=-1) long = longSel;
+      if(longSel==-1 && longCustom>0) long = longCustom;
+      if(shortSel>0 && shortSel!=-1) short = shortSel;
+      if(shortSel==-1 && shortCustom>0) short = shortCustom;
+
+      const aspect = srcW/srcH;
+      if(w>=h){ w=long; h=short||Math.round(long/aspect); }
+      else { h=long; w=short||Math.round(long*aspect); }
+      return {w,h};
+    }
+
+    function addThumb(src,name,srcW,srcH,dstW,dstH){
+      const div=document.createElement('div'); div.className='thumb';
+      const img=new Image(); img.src=src; div.appendChild(img);
+      const meta=document.createElement('div'); meta.className='meta';
+      meta.innerHTML=`${name}<br>原始: ${srcW}×${srcH}<br>輸出: ${dstW}×${dstH}`;
+      div.appendChild(meta);
+      document.getElementById("thumbs").appendChild(div);
+    }
+
+    async function processImages(){
+      const files=document.getElementById('fileInput2').files;
+      if(!files.length) return alert("請選擇圖片");
+      document.getElementById("thumbs").innerHTML="";
+      for(const file of files){
+        const img=await readAsImage(file);
+        const {w,h}=calcTargetSize(img.naturalWidth,img.naturalHeight);
+        const canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
+        await picaInstance.resize(img,canvas,{quality:3,alpha:true});
+        const outBlob=await picaInstance.toBlob(canvas,"image/png",1);
+        addThumb(URL.createObjectURL(outBlob),file.name,img.naturalWidth,img.naturalHeight,w,h);
+      }
+    }
+
+    function readAsImage(file){
+      return new Promise((resolve,reject)=>{
+        const reader=new FileReader();
+        reader.onload=e=>{
+          const img=new Image();
+          img.onload=()=>resolve(img);
+          img.onerror=reject;
+          img.src=e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
     }
   </script>
 </body>
