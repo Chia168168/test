@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TENG 圖片尺寸調整與格式轉換工具 v1.1</title>
+    <title>TENG 圖片尺寸調整與格式轉換工具 v1.2</title>
     <script src="https://unpkg.com/heic2any@0.0.4/dist/heic2any.min.js"></script>
     <script src="https://unpkg.com/jszip@3.10.1/dist/jszip.min.js"></script>
     <script src="https://unpkg.com/file-saver@2.0.5/dist/FileSaver.min.js"></script>
@@ -37,14 +37,18 @@
             border: 1px solid #ccc;
             padding: 10px;
         }
+        .file-item {
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
         .thumbnail-container {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
         }
         .thumbnail {
-            max-width: 150px;
-            max-height: 150px;
+            max-width: 75px;
+            max-height: 75px;
             object-fit: contain;
             border: 1px solid #ccc;
         }
@@ -60,7 +64,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>TENG 圖片尺寸調整與格式轉換工具 v1.1</h1>
+        <h1>TENG 圖片尺寸調整與格式轉換工具 v1.2</h1>
         
         <div>
             <label>選擇檔案或資料夾:</label><br>
@@ -69,7 +73,7 @@
         </div>
         
         <div>
-            <h3>已選擇的檔案:</h3>
+            <h3 id="fileListHeader">已選擇的檔案：0 張</h3>
             <div id="fileList"></div>
         </div>
         
@@ -159,10 +163,6 @@
                 // 避免重複檔案
                 if (originalImages.some(img => img.file.name === file.name && img.file.size === file.size)) return;
 
-                const listItem = document.createElement('div');
-                listItem.textContent = file.name;
-                document.getElementById('fileList').appendChild(listItem);
-
                 const isHeicHeif = file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif');
 
                 if (isHeicHeif) {
@@ -192,6 +192,7 @@
             const img = new Image();
             img.onload = function() {
                 originalImages.push({ file, img });
+                updateFileList();
                 if (index === 0) {
                     updateDimensionInputs();
                 }
@@ -199,7 +200,7 @@
                 const thumbnail = document.createElement('img');
                 thumbnail.src = imageSrc;
                 thumbnail.className = 'thumbnail';
-                thumbnail.dataset.index = originalImages.length - 1;
+                thumbnail.dataset.index = index;
                 thumbnail.title = file.name;
                 document.getElementById('previewContainer').appendChild(thumbnail);
             };
@@ -209,6 +210,43 @@
             img.src = imageSrc;
         }
 
+        function updateFileList() {
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '';
+            document.getElementById('fileListHeader').textContent = `已選擇的檔案：${originalImages.length} 張`;
+
+            const mode = document.getElementById('dimensionMode').value;
+            const widthSelect = document.getElementById('widthSelect').value;
+            const heightSelect = document.getElementById('heightSelect').value;
+            const widthInput = parseInt(document.getElementById('widthInput').value);
+            const heightInput = parseInt(document.getElementById('heightInput').value);
+            const aspectRatio = document.getElementById('aspectRatio').checked;
+
+            originalImages.forEach((item, index) => {
+                const listItem = document.createElement('div');
+                listItem.className = 'file-item';
+                let adjustedWidth = item.img.width;
+                let adjustedHeight = item.img.height;
+
+                if (mode === 'width' && widthSelect !== '') {
+                    adjustedWidth = widthSelect === 'custom' ? (widthInput || item.img.width) : parseInt(widthSelect);
+                    adjustedHeight = aspectRatio ? Math.round(adjustedWidth * (item.img.height / item.img.width)) : item.img.height;
+                } else if (mode === 'height' && heightSelect !== '') {
+                    adjustedHeight = heightSelect === 'custom' ? (heightInput || item.img.height) : parseInt(heightSelect);
+                    adjustedWidth = aspectRatio ? Math.round(adjustedHeight * (item.img.width / item.img.height)) : item.img.width;
+                } else if (mode === 'both') {
+                    adjustedWidth = widthSelect === 'custom' ? (widthInput || item.img.width) : parseInt(widthSelect);
+                    adjustedHeight = heightSelect === 'custom' ? (heightInput || item.img.height) : parseInt(heightSelect);
+                    if (aspectRatio && widthSelect !== '' && heightSelect !== '') {
+                        adjustedHeight = Math.round(adjustedWidth * (item.img.height / item.img.width));
+                    }
+                }
+
+                listItem.textContent = `${item.file.name} (原尺寸: ${item.img.width}x${item.img.height}, 調整後: ${adjustedWidth}x${adjustedHeight})`;
+                fileList.appendChild(listItem);
+            });
+        }
+
         function toggleCustomInput(type) {
             const select = document.getElementById(`${type}Select`);
             const input = document.getElementById(`${type}Input`);
@@ -216,6 +254,7 @@
             if (select.value !== 'custom') {
                 updateDimensions();
             }
+            updateFileList();
         }
 
         function toggleDimensionInputs() {
@@ -224,12 +263,15 @@
             document.getElementById('heightContainer').classList.toggle('hidden', mode === 'width');
             updateDimensionInputs();
             updateDimensions();
+            updateFileList();
         }
 
-        document.getElementById('widthInput').addEventListener('input', updateDimensions);
-        document.getElementById('heightInput').addEventListener('input', updateDimensions);
-        document.getElementById('widthSelect').addEventListener('change', updateDimensions);
-        document.getElementById('heightSelect').addEventListener('change', updateDimensions);
+        document.getElementById('widthInput').addEventListener('input', () => { updateDimensions(); updateFileList(); });
+        document.getElementById('heightInput').addEventListener('input', () => { updateDimensions(); updateFileList(); });
+        document.getElementById('widthSelect').addEventListener('change', () => { updateDimensions(); updateFileList(); });
+        document.getElementById('heightSelect').addEventListener('change', () => { updateDimensions(); updateFileList(); });
+        document.getElementById('dimensionMode').addEventListener('change', toggleDimensionInputs);
+        document.getElementById('aspectRatio').addEventListener('change', () => { updateDimensions(); updateFileList(); });
 
         function updateDimensionInputs() {
             if (!originalImages[0]) return;
@@ -353,6 +395,8 @@
                 downloadLink.download = 'processed_images.zip';
                 downloadLink.textContent = '下載 ZIP 壓縮檔';
             }
+
+            updateFileList();
         }
     </script>
 </body>
