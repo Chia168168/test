@@ -1,59 +1,60 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Teng Image Tools</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; background:#0b1020; color:#e7ecf3; }
-    h1, h2 { text-align: center; }
-    .tabs { display: flex; justify-content: center; margin-bottom: 20px; gap:10px; flex-wrap:wrap; }
-    .tab { padding: 10px 20px; cursor: pointer; border-radius:6px; background:#002366; color:#fff; font-weight:bold; }
-    .tab.active { background:#0044aa; }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-    textarea { width: 100%; height: 150px; }
-    img.preview { max-width: 100%; max-height: 200px; display: block; margin: 10px auto; }
-    button { margin: 10px 0; padding:10px; font-size:16px; cursor:pointer; }
-    select, input[type="number"], input[type="text"], input[type="range"] {
-      padding:10px; border-radius:6px; border:1px solid #27314a; background:#141a2e; color:#e7ecf3; font-size:16px; width:100%;
-      box-sizing:border-box;
-    }
-    .card{background:#141a2e;border:1px solid #27314a;border-radius:12px;padding:16px;margin:12px auto;max-width:100%}
-    .log{font-family:monospace;background:#0a0f22;border:1px solid #27314a;border-radius:8px;padding:10px;height:160px;overflow:auto}
-    .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
-    .thumb{background:#0c1226;border:1px solid #27314a;border-radius:12px;overflow:hidden}
-    .thumb img{width:100%;display:block}
-    .thumb .meta{padding:8px;font-size:12px;color:#9aa4b2;text-align:center}
-    .drop{border:2px dashed #2b3b66;border-radius:10px;padding:18px;text-align:center;color:#c7d2fe;background:#0d1330;margin-bottom:10px}
-    .drop.dragover{outline:2px solid #5eead4}
-    label{display:block;margin-top:10px;font-size:14px;color:#9aa4b2}
-    .file-btn {
-      display:inline-block; padding:10px 20px; background:#002366; color:#fff; border-radius:6px; cursor:pointer; margin:5px 0; text-align:center;
-    }
-    .file-btn input[type=file]{ display:none; }
-    .size-note{font-size:12px;color:#f99;margin-top:4px;}
-    @media(max-width:600px){
-      body { margin:5px; }
-      .card { margin:5px; padding:12px; }
-      button, select, input, textarea { width:100% !important; box-sizing:border-box; font-size:16px; }
-      .tabs { flex-direction:row; gap:5px; flex-wrap:wrap; }
-      .thumbs { grid-template-columns:1fr; gap:6px; }
-    }
-  </style>
-  <script src="https://cdn.jsdelivr.net/npm/pica@8.0.0/dist/pica.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jszip/dist/jszip.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/file-saver/dist/FileSaver.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teng Image Tools</title>
+<style>
+body { font-family: Arial, sans-serif; margin: 20px; background:#0b1020; color:#e7ecf3; }
+h1, h2 { text-align: center; }
+.tabs { display: flex; justify-content: center; margin-bottom: 20px; flex-wrap:wrap; gap:10px; }
+.tab { padding: 10px 20px; cursor: pointer; border-radius:6px; background:#002366; color:#fff; font-weight:bold; }
+.tab.active { background:#0044aa; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+textarea { width: 100%; height: 150px; }
+img.preview { max-width: 100%; max-height: 200px; display: block; margin: 10px auto; }
+button { margin: 10px 0; padding:10px; font-size:16px; cursor:pointer; }
+select, input[type="number"], input[type="text"], input[type="range"] {
+  padding:10px; border-radius:6px; border:1px solid #27314a; background:#141a2e; color:#e7ecf3; font-size:16px; width:100%;
+  box-sizing:border-box;
+}
+.card{background:#141a2e;border:1px solid #27314a;border-radius:12px;padding:16px;margin:12px auto;max-width:100%}
+.log{font-family:monospace;background:#0a0f22;border:1px solid #27314a;border-radius:8px;padding:10px;height:160px;overflow:auto}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+.thumb{background:#0c1226;border:1px solid #27314a;border-radius:12px;overflow:hidden}
+.thumb img{width:100%;display:block}
+.thumb .meta{padding:8px;font-size:12px;color:#9aa4b2;text-align:center}
+.drop{border:2px dashed #2b3b66;border-radius:10px;padding:18px;text-align:center;color:#c7d2fe;background:#0d1330;margin-bottom:10px}
+.drop.dragover{outline:2px solid #5eead4}
+label{display:block;margin-top:10px;font-size:14px;color:#9aa4b2}
+.file-btn { display:inline-block; padding:10px 20px; background:#002366; color:#fff; border-radius:6px; cursor:pointer; margin:5px 0; text-align:center; }
+.file-btn input[type=file]{ display:none; }
+#sizeNotice{color:#ff9c00; font-size:14px; margin-top:5px;}
+@media(max-width:600px){
+  body { margin:5px; }
+  .card { margin:5px; padding:12px; }
+  button, select, input, textarea { width:100% !important; box-sizing:border-box; font-size:16px; }
+  .tabs { flex-direction:row; gap:5px; flex-wrap:wrap; }
+  .thumbs { grid-template-columns:1fr; gap:6px; }
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/pica@8.0.0/dist/pica.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip/dist/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/file-saver/dist/FileSaver.min.js"></script>
 </head>
 <body>
 <h1>Teng Image Tools</h1>
 
+<!-- 分頁切換 -->
 <div class="tabs">
   <div class="tab active" data-tab="resizer">尺寸格式調整</div>
   <div class="tab" data-tab="base64">Base64轉換</div>
 </div>
 
+<!-- 圖片尺寸調整 -->
 <div id="resizer" class="tab-content active">
   <section class="card">
     <h2>圖片尺寸/格式調整器</h2>
@@ -99,10 +100,8 @@
       </select>
       <input type="number" id="shortSideCustom" placeholder="自訂短邊" style="display:none; margin-top:5px;">
     </label>
+    <div id="sizeNotice">注意：已設定長/短邊，縮放比例將忽略</div>
 
-    <div class="size-note" id="sizeNote">原尺寸 → 修改後尺寸</div>
-
-    <label><input id="lock" type="checkbox" checked> 維持長寬比</label>
     <label>縮放比例 (%) <input id="scale" type="range" min="10" max="200" value="100"><span id="scaleLabel">100%</span></label>
     <label>品質 (JPEG/WebP) <input id="quality" type="range" min="50" max="100" value="90"><span id="qualityLabel">90%</span></label>
 
@@ -113,6 +112,7 @@
   </section>
 </div>
 
+<!-- Base64 轉換 -->
 <div id="base64" class="tab-content">
   <section class="card">
     <h2>圖片 → Base64</h2>
@@ -141,7 +141,7 @@
 <script>
 const picaInstance = window.pica({features:['js','wasm','cib']});
 
-// ---------- 分頁 ----------
+// ---------- 分頁切換 ----------
 document.querySelectorAll(".tab").forEach(tab=>{
   tab.addEventListener("click",()=>{
     document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
@@ -151,17 +151,24 @@ document.querySelectorAll(".tab").forEach(tab=>{
   });
 });
 
-// ---------- 自訂長短邊顯示 ----------
-document.getElementById("longSide").addEventListener("change", e=>{
-  document.getElementById("longSideCustom").style.display = e.target.value=="-1" ? "block":"none";
-});
-document.getElementById("shortSide").addEventListener("change", e=>{
-  document.getElementById("shortSideCustom").style.display = e.target.value=="-1" ? "block":"none";
-});
+// ---------- 長短邊選擇 ----------
+function toggleCustom(selectId, inputId){
+  const sel = document.getElementById(selectId);
+  const input = document.getElementById(inputId);
+  sel.addEventListener('change', e=>{
+    input.style.display = e.target.value == "-1" ? "block" : "none";
+  });
+}
+toggleCustom('longSide','longSideCustom');
+toggleCustom('shortSide','shortSideCustom');
 
-// ---------- 縮放比例與品質顯示 ----------
-document.getElementById("scale").addEventListener("input", e=>{document.getElementById("scaleLabel").textContent=e.target.value+"%"; updatePreviewSize();});
-document.getElementById("quality").addEventListener("input", e=>{document.getElementById("qualityLabel").textContent=e.target.value+"%";});
+// ---------- 縮放/品質顯示 ----------
+document.getElementById("scale").addEventListener("input", e=>{
+  document.getElementById("scaleLabel").textContent = e.target.value + "%";
+});
+document.getElementById("quality").addEventListener("input", e=>{
+  document.getElementById("qualityLabel").textContent = e.target.value + "%";
+});
 
 // ---------- 日誌 ----------
 const logEl = document.getElementById("log");
@@ -171,83 +178,36 @@ function log(msg){
   logEl.scrollTop=logEl.scrollHeight;
 }
 
-// ---------- 縮圖預覽 ----------
+// ---------- 拖放與檔案 ----------
 const thumbs = document.getElementById("thumbs");
 const queue = [];
+const sizeNotice = document.getElementById("sizeNotice");
+
+async function handleFiles(list){
+  for(const file of list){
+    queue.push(file);
+    const img = await readAsImage(file);
+    const {w,h} = calcTargetSize(img.naturalWidth,img.naturalHeight);
+    addThumb(URL.createObjectURL(file), file.name, w, h, img.naturalWidth, img.naturalHeight);
+  }
+  log(`加入 ${list.length} 個檔案`);
+}
+
 function addThumb(src,name,w,h,origW,origH){
   const div = document.createElement('div'); div.className='thumb';
   const img = new Image(); img.src=src; div.appendChild(img);
   const meta = document.createElement('div'); meta.className='meta';
-  meta.innerHTML=`${name}<br>${origW}×${origH} → ${w}×${h}px`; div.appendChild(meta);
+  meta.innerHTML = `${name}<br>${origW}×${origH} → ${w}×${h}px`;
+  div.appendChild(meta);
   thumbs.appendChild(div);
-  updatePreviewSizeDisplay(origW,origH,w,h);
 }
 
-// ---------- 拖放與檔案 ----------
 const drop=document.getElementById('drop');
 drop.addEventListener('dragover', e=>{e.preventDefault(); drop.classList.add('dragover');});
 drop.addEventListener('dragleave', e=>{e.preventDefault(); drop.classList.remove('dragover');});
 drop.addEventListener('drop', e=>{e.preventDefault(); drop.classList.remove('dragover'); handleFiles([...e.dataTransfer.files]);});
 document.getElementById('fileFiles').addEventListener('change', e=>handleFiles([...e.target.files]));
 document.getElementById('fileFolder').addEventListener('change', e=>handleFiles([...e.target.files]));
-
-async function handleFiles(list){
-  for(const file of list){
-    queue.push(file);
-    addThumb(URL.createObjectURL(file),file.name,'—','—','—','—');
-  }
-  log(`加入 ${list.length} 個檔案`);
-}
-
-// ---------- 計算目標尺寸 ----------
-function calcTargetSize(img){
-  const origW = img.naturalWidth;
-  const origH = img.naturalHeight;
-  const longSel = Number(document.getElementById('longSide').value);
-  const longCustom = Number(document.getElementById('longSideCustom').value);
-  const shortSel = Number(document.getElementById('shortSide').value);
-  const shortCustom = Number(document.getElementById('shortSideCustom').value);
-  const scaleVal = Number(document.getElementById('scale').value)/100;
-
-  let w = origW, h = origH;
-  let longSet = longSel>0 || longSel==-1;
-  let shortSet = shortSel>0 || shortSel==-1;
-
-  if(longSet || shortSet){
-    // 長短邊設定，縮放比例忽略
-    document.getElementById('sizeNote').textContent="注意：已設定長/短邊，縮放比例將忽略";
-    if(origW >= origH){
-      if(longSet) w = (longSel>0?longSel:longCustom);
-      if(shortSet) h = (shortSel>0?shortSel:shortCustom);
-      if(longSet && !shortSet) h = Math.round(origH * w / origW);
-      if(!longSet && shortSet) w = Math.round(origW * h / origH);
-    } else {
-      if(longSet) h = (longSel>0?longSel:longCustom);
-      if(shortSet) w = (shortSel>0?shortSel:shortCustom);
-      if(longSet && !shortSet) w = Math.round(origW * h / origH);
-      if(!longSet && shortSet) h = Math.round(origH * w / origW);
-    }
-  } else {
-    w = Math.round(origW * scaleVal);
-    h = Math.round(origH * scaleVal);
-    document.getElementById('sizeNote').textContent=`原尺寸 → 修改後尺寸`;
-  }
-  return {w,h,origW,origH};
-}
-
-function updatePreviewSizeDisplay(origW,origH,newW,newH){
-  document.getElementById('sizeNote').textContent=`${origW}×${origH} → ${newW}×${newH}`;
-}
-function updatePreviewSize(){
-  thumbs.querySelectorAll('.thumb img').forEach(img=>{
-    if(img._orig){ 
-      const {w,h} = calcTargetSize(img._orig);
-      const meta = img.parentNode.querySelector('.meta');
-      meta.innerHTML=`${img._orig.name}<br>${img._orig.naturalWidth}×${img._orig.naturalHeight} → ${w}×${h}px`;
-      updatePreviewSizeDisplay(img._orig.naturalWidth,img._orig.naturalHeight,w,h);
-    }
-  });
-}
 
 // ---------- 處理圖片 ----------
 async function readAsImage(blob){
@@ -260,34 +220,31 @@ async function readAsImage(blob){
   });
 }
 
-function guessMime(name,original){
-  const fmt = document.getElementById('format').value;
-  if(fmt!='keep') return fmt;
-  const ext = (name.split('.').pop()||'').toLowerCase();
-  const map = {jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',webp:'image/webp'};
-  return map[ext]||original||'image/jpeg';
-}
+function calcTargetSize(origW, origH){
+  let longSideSel = Number(document.getElementById('longSide').value);
+  let longCustom = Number(document.getElementById('longSideCustom').value);
+  let shortSideSel = Number(document.getElementById('shortSide').value);
+  let shortCustom = Number(document.getElementById('shortSideCustom').value);
+  let scale = Number(document.getElementById('scale').value)/100;
 
-async function processFile(file){
-  try{
-    let f=file;
-    if(file.name.toLowerCase().endsWith(".heic")||file.name.toLowerCase().endsWith(".heif")){
-      const blob = await heic2any({blob:file,toType:"image/png"});
-      f = new File([blob],file.name.replace(/\.(heic|heif)$/i,'.png'),{type:"image/png"});
-    }
-    const img = await readAsImage(f);
-    img._orig = img; // 保存原圖給預覽用
-    const {w,h,origW,origH} = calcTargetSize(img);
-    const canvas = document.createElement('canvas'); canvas.width=w; canvas.height=h;
-    await picaInstance.resize(img,canvas,{quality:3,alpha:true});
-    const mime = guessMime(f.name,f.type);
-    const quality = Number(document.getElementById('quality').value)/100;
-    const outBlob = await picaInstance.toBlob(canvas,mime,(mime.includes('jpeg')||mime.includes('webp'))?quality:undefined);
-    const extMap={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'};
-    const ext = extMap[mime]||'jpg';
-    const outName = `${file.name.replace(/\.[^.]+$/,'')}_${w}x${h}.${ext}`;
-    return {blob:outBlob,name:outName,w,h};
-  }catch(e){ log(`錯誤：${file.name} → ${e}`); return null;}
+  let w = origW, h = origH;
+
+  // 若長/短邊設定了，就忽略縮放比例
+  let useScale = (longSideSel===0 && shortSideSel===0);
+  sizeNotice.style.display = useScale ? 'none':'block';
+  if(useScale){
+    w = Math.round(w*scale); h = Math.round(h*scale);
+  }
+
+  // 長邊
+  if(longSideSel>0 && longSideSel!=-1){ w = origW>origH ? longSideSel : Math.round(origW*longSideSel/origH); h = origW>origH ? Math.round(origH*longSideSel/origW) : longSideSel; }
+  if(longSideSel==-1 && longCustom>0){ w = origW>origH ? longCustom : Math.round(origW*longCustom/origH); h = origW>origH ? Math.round(origH*longCustom/origW) : longCustom; }
+
+  // 短邊
+  if(shortSideSel>0 && shortSideSel!=-1){ w = origW<origH ? shortSideSel : Math.round(origW*shortSideSel/origH); h = origW<origH ? Math.round(origH*shortSideSel/origW) : shortSideSel; }
+  if(shortSideSel==-1 && shortCustom>0){ w = origW<origH ? shortCustom : Math.round(origW*shortCustom/origH); h = origW<origH ? Math.round(origH*shortCustom/origW) : shortCustom; }
+
+  return {w,h};
 }
 
 document.getElementById('process').addEventListener('click', async()=>{
@@ -303,11 +260,30 @@ document.getElementById('process').addEventListener('click', async()=>{
   }
 });
 
-function downloadBlob(blob,name){ const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(url),2000);}
-document.getElementById('clear').addEventListener('click',()=>{queue.length=0; thumbs.innerHTML=''; log('已清空佇列'); document.getElementById('sizeNote').textContent="原尺寸 → 修改後尺寸";});
+async function processFile(file){
+  try{
+    let f=file;
+    if(file.name.toLowerCase().endsWith(".heic")||file.name.toLowerCase().endsWith(".heif")){
+      const blob = await heic2any({blob:file,toType:"image/png"});
+      f = new File([blob],file.name.replace(/\.(heic|heif)$/i,'.png'),{type:"image/png"});
+    }
+    const img = await readAsImage(f);
+    const {w,h} = calcTargetSize(img.naturalWidth,img.naturalHeight);
+    const canvas = document.createElement('canvas'); canvas.width=w; canvas.height=h;
+    await picaInstance.resize(img,canvas,{quality:3,alpha:true});
+    const fmt = document.getElementById('format').value;
+    const mime = fmt!='keep'?fmt:(f.type||'image/jpeg');
+    const quality = Number(document.getElementById('quality').value)/100;
+    const outBlob = await picaInstance.toBlob(canvas,mime,(mime.includes('jpeg')||mime.includes('webp'))?quality:undefined);
+    const extMap={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'};
+    const ext = extMap[mime]||'jpg';
+    const outName = `${file.name.replace(/\.[^.]+$/,'')}_${w}x${h}.${ext}`;
+    return {blob:outBlob,name:outName,w,h};
+  }catch(e){ log(`錯誤：${file.name} → ${e}`); return null;}
+}
 
-// ---------- Base64 與進度保持不變 ----------
-// ... (保留你原本 Base64 相關代碼)
+function downloadBlob(blob,name){ const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(url),2000);}
+document.getElementById('clear').addEventListener('click',()=>{queue.length=0; thumbs.innerHTML=''; log('已清空佇列');});
 </script>
 </body>
 </html>
