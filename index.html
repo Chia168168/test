@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>圖片尺寸調整與格式轉換（支援多檔案/資料夾）</title>
+    <title>TENG 圖片尺寸調整與格式轉換工具 v1.0</title>
     <script src="https://unpkg.com/heic2any@0.0.4/dist/heic2any.min.js"></script>
     <script src="https://unpkg.com/jszip@3.10.1/dist/jszip.min.js"></script>
     <script src="https://unpkg.com/file-saver@2.0.5/dist/FileSaver.min.js"></script>
@@ -48,11 +48,14 @@
             object-fit: contain;
             border: 1px solid #ccc;
         }
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>圖片尺寸調整與格式轉換</h1>
+        <h1>TENG 圖片尺寸調整與格式轉換工具 v1.0</h1>
         
         <div>
             <label>選擇檔案或資料夾:</label><br>
@@ -69,18 +72,32 @@
             <div>
                 <label>尺寸設定:</label>
                 <select id="dimensionMode">
-                    <option value="both">寬度與高度</option>
-                    <option value="width">固定寬度</option>
+                    <option value="width" selected>固定寬度</option>
                     <option value="height">固定高度</option>
+                    <option value="both">寬度與高度</option>
                 </select>
             </div>
             <div>
                 <label>寬度 (px):</label>
-                <input type="number" id="widthInput" min="1" placeholder="原始寬度">
+                <select id="widthSelect" onchange="toggleCustomInput('width')">
+                    <option value="256">256</option>
+                    <option value="512">512</option>
+                    <option value="1024" selected>1024</option>
+                    <option value="1280">1280</option>
+                    <option value="custom">自訂</option>
+                </select>
+                <input type="number" id="widthInput" min="1" class="hidden" placeholder="輸入寬度">
             </div>
             <div>
                 <label>高度 (px):</label>
-                <input type="number" id="heightInput" min="1" placeholder="原始高度">
+                <select id="heightSelect" onchange="toggleCustomInput('height')">
+                    <option value="256">256</option>
+                    <option value="512">512</option>
+                    <option value="1024" selected>1024</option>
+                    <option value="1280">1280</option>
+                    <option value="custom">自訂</option>
+                </select>
+                <input type="number" id="heightInput" min="1" class="hidden" placeholder="輸入高度">
             </div>
             <div>
                 <label>保持比例:</label>
@@ -96,7 +113,7 @@
             </div>
             <div>
                 <label>品質 (僅JPEG/WebP):</label>
-                <input type="number" id="qualityInput" min="0" max="100" value="80">
+                <input type="number" id="qualityInput" min="0" max="100" value="90">
             </div>
         </div>
         
@@ -166,8 +183,7 @@
             img.onload = function() {
                 originalImages[index] = { file, img };
                 if (index === 0) {
-                    document.getElementById('widthInput').placeholder = img.width;
-                    document.getElementById('heightInput').placeholder = img.height;
+                    updateDimensionInputs();
                 }
                 // 顯示縮圖
                 const thumbnail = document.createElement('img');
@@ -183,27 +199,62 @@
             img.src = imageSrc;
         }
 
+        function toggleCustomInput(type) {
+            const select = document.getElementById(`${type}Select`);
+            const input = document.getElementById(`${type}Input`);
+            input.classList.toggle('hidden', select.value !== 'custom');
+            if (select.value !== 'custom') {
+                updateDimensions();
+            }
+        }
+
         document.getElementById('widthInput').addEventListener('input', updateDimensions);
         document.getElementById('heightInput').addEventListener('input', updateDimensions);
         document.getElementById('dimensionMode').addEventListener('change', updateDimensions);
+
+        function updateDimensionInputs() {
+            if (!originalImages[0]) return;
+            const widthSelect = document.getElementById('widthSelect');
+            const heightSelect = document.getElementById('heightSelect');
+            const width = originalImages[0].img.width;
+            const height = originalImages[0].img.height;
+            const options = [256, 512, 1024, 1280];
+            widthSelect.value = options.includes(width) ? width : '1024';
+            heightSelect.value = options.includes(height) ? height : '1024';
+            toggleCustomInput('width');
+            toggleCustomInput('height');
+        }
 
         function updateDimensions() {
             if (!originalImages[0] || !document.getElementById('aspectRatio').checked) return;
 
             const mode = document.getElementById('dimensionMode').value;
-            const width = parseInt(document.getElementById('widthInput').value);
-            const height = parseInt(document.getElementById('heightInput').value);
+            const widthSelect = document.getElementById('widthSelect').value;
+            const heightSelect = document.getElementById('heightSelect').value;
+            const widthInput = parseInt(document.getElementById('widthInput').value);
+            const heightInput = parseInt(document.getElementById('heightInput').value);
             const ratio = originalImages[0].img.height / originalImages[0].img.width;
 
+            let width = widthSelect === 'custom' ? widthInput : parseInt(widthSelect);
+            let height = heightSelect === 'custom' ? heightInput : parseInt(heightSelect);
+
             if (mode === 'width' && width > 0) {
+                document.getElementById('heightSelect').value = 'custom';
                 document.getElementById('heightInput').value = Math.round(width * ratio);
+                toggleCustomInput('height');
             } else if (mode === 'height' && height > 0) {
+                document.getElementById('widthSelect').value = 'custom';
                 document.getElementById('widthInput').value = Math.round(height / ratio);
+                toggleCustomInput('width');
             } else if (mode === 'both') {
                 if (width > 0) {
+                    document.getElementById('heightSelect').value = 'custom';
                     document.getElementById('heightInput').value = Math.round(width * ratio);
+                    toggleCustomInput('height');
                 } else if (height > 0) {
+                    document.getElementById('widthSelect').value = 'custom';
                     document.getElementById('widthInput').value = Math.round(height / ratio);
+                    toggleCustomInput('width');
                 }
             }
         }
@@ -217,6 +268,8 @@
             const format = document.getElementById('formatSelect').value;
             const quality = parseInt(document.getElementById('qualityInput').value) / 100;
             const mode = document.getElementById('dimensionMode').value;
+            const widthSelect = document.getElementById('widthSelect').value;
+            const heightSelect = document.getElementById('heightSelect').value;
             const widthInput = parseInt(document.getElementById('widthInput').value);
             const heightInput = parseInt(document.getElementById('heightInput').value);
             processedBlobs = [];
@@ -228,15 +281,15 @@
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
 
-                let width = widthInput || img.width;
-                let height = heightInput || img.height;
+                let width = widthSelect === 'custom' ? (widthInput || img.width) : parseInt(widthSelect);
+                let height = heightSelect === 'custom' ? (heightInput || img.height) : parseInt(heightSelect);
 
                 if (document.getElementById('aspectRatio').checked) {
                     const ratio = img.height / img.width;
-                    if (mode === 'width' && widthInput) {
-                        height = Math.round(widthInput * ratio);
-                    } else if (mode === 'height' && heightInput) {
-                        width = Math.round(heightInput / ratio);
+                    if (mode === 'width' && widthSelect !== '') {
+                        height = Math.round(width * ratio);
+                    } else if (mode === 'height' && heightSelect !== '') {
+                        width = Math.round(height / ratio);
                     } else if (!widthInput && !heightInput) {
                         width = img.width;
                         height = img.height;
