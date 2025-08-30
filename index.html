@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TENG 圖片尺寸調整與格式轉換工具 v1.3</title>
+    <title>TENG 圖片尺寸調整與格式轉換工具 v1.4</title>
     <script src="https://unpkg.com/heic2any@0.0.4/dist/heic2any.min.js"></script>
     <script src="https://unpkg.com/jszip@3.10.1/dist/jszip.min.js"></script>
     <script src="https://unpkg.com/file-saver@2.0.5/dist/FileSaver.min.js"></script>
@@ -36,6 +36,7 @@
             overflow-y: auto;
             border: 1px solid #ccc;
             padding: 10px;
+            font-size: 14px;
         }
         .file-item {
             margin-bottom: 5px;
@@ -60,23 +61,29 @@
             padding: 10px 20px;
             cursor: pointer;
         }
-        input[type="file"] {
+        .file-button {
             font-size: 32px;
-            padding: 8px;
+            padding: 8px 16px;
+            cursor: pointer;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>TENG 圖片尺寸調整與格式轉換工具 v1.3</h1>
+        <h1>TENG 圖片尺寸調整與格式轉換工具 v1.4</h1>
         
         <div>
             <label>選擇檔案:</label><br>
-            <input type="file" id="imageInput" accept="image/*,.heic,.heif" multiple>
+            <button class="file-button" onclick="document.getElementById('imageInput').click()">選擇檔案</button>
+            <input type="file" id="imageInput" accept="image/*,.heic,.heif" multiple class="hidden">
         </div>
         <div>
             <label>選擇資料夾:</label><br>
-            <input type="file" id="folderInput" webkitdirectory>
+            <button class="file-button" onclick="document.getElementById('folderInput').click()">選擇資料夾</button>
+            <input type="file" id="folderInput" webkitdirectory class="hidden">
         </div>
         
         <div>
@@ -143,7 +150,8 @@
         </div>
         
         <div>
-            <a id="downloadLink" style="display: none;">下載處理後的圖片</a>
+            <a id="downloa
+System: dLink" style="display: none;">下載處理後的圖片</a>
         </div>
     </div>
 
