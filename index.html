@@ -94,14 +94,19 @@
             const isHeicHeif = file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif');
 
             if (isHeicHeif) {
-                // 使用 heic2any 將 HEIC/HEIF 轉為 PNG
+                // 嘗試將 HEIC/HEIF 轉為 PNG
                 heic2any({ blob: file, toType: "image/png" })
                     .then(function(result) {
                         handleImageLoad(URL.createObjectURL(result));
                     })
                     .catch(function(err) {
-                        alert('無法處理 HEIC/HEIF 檔案，請確保瀏覽器支援或試試其他格式。');
-                        console.error(err);
+                        console.warn('HEIC/HEIF 轉換失敗，嘗試作為其他格式處理:', err);
+                        // 假設檔案可能是 JPEG 或其他常見格式，直接讀取
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            handleImageLoad(e.target.result);
+                        };
+                        reader.readAsDataURL(file);
                     });
             } else {
                 const reader = new FileReader();
@@ -119,6 +124,9 @@
                 document.getElementById('widthInput').placeholder = img.width;
                 document.getElementById('heightInput').placeholder = img.height;
                 document.getElementById('preview').src = img.src;
+            };
+            img.onerror = function() {
+                alert('無法載入圖片，請確認檔案格式是否正確！');
             };
             img.src = imageSrc;
         }
