@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TENG 圖片尺寸調整與格式轉換工具 v1.2</title>
+    <title>TENG 圖片尺寸調整與格式轉換工具 v1.3</title>
     <script src="https://unpkg.com/heic2any@0.0.4/dist/heic2any.min.js"></script>
     <script src="https://unpkg.com/jszip@3.10.1/dist/jszip.min.js"></script>
     <script src="https://unpkg.com/file-saver@2.0.5/dist/FileSaver.min.js"></script>
@@ -60,16 +60,23 @@
             padding: 10px 20px;
             cursor: pointer;
         }
+        input[type="file"] {
+            font-size: 32px;
+            padding: 8px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>TENG 圖片尺寸調整與格式轉換工具 v1.2</h1>
+        <h1>TENG 圖片尺寸調整與格式轉換工具 v1.3</h1>
         
         <div>
-            <label>選擇檔案或資料夾:</label><br>
+            <label>選擇檔案:</label><br>
             <input type="file" id="imageInput" accept="image/*,.heic,.heif" multiple>
-            <input type="file" id="folderInput" webkitdirectory style="margin-top: 10px;">
+        </div>
+        <div>
+            <label>選擇資料夾:</label><br>
+            <input type="file" id="folderInput" webkitdirectory>
         </div>
         
         <div>
