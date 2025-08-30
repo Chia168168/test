@@ -6,18 +6,19 @@
 <title>Teng Image Tools</title>
 <style>
 body { font-family: Arial, sans-serif; margin: 20px; background:#0b1020; color:#e7ecf3; }
-h1,h2 { text-align:center; }
+h1, h2 { text-align: center; }
 /* 分頁按鈕 */
-.tabs { display:flex; justify-content:center; margin-bottom:20px; flex-wrap:wrap; gap:10px; }
-.tab { padding:10px 20px; cursor:pointer; border-radius:6px; background:#002366; color:#fff; font-weight:bold; }
+.tabs { display: flex; justify-content: center; margin-bottom: 20px; gap:10px; }
+.tab { padding: 10px 20px; cursor: pointer; border-radius:6px; background:#002366; color:#fff; font-weight:bold; }
 .tab.active { background:#0044aa; }
-.tab-content { display:none; }
-.tab-content.active { display:block; }
-textarea { width:100%; height:150px; }
-img.preview { max-width:100%; max-height:200px; display:block; margin:10px auto; }
-button { margin:10px 0; padding:10px; font-size:16px; cursor:pointer; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+textarea { width: 100%; height: 150px; }
+img.preview { max-width: 100%; max-height: 200px; display: block; margin: 10px auto; }
+button { margin: 10px 0; padding:10px; font-size:16px; cursor:pointer; }
 select, input[type="number"], input[type="text"], input[type="range"] {
-  padding:10px; border-radius:6px; border:1px solid #27314a; background:#141a2e; color:#e7ecf3; font-size:16px; width:100%; box-sizing:border-box;
+  padding:10px; border-radius:6px; border:1px solid #27314a; background:#141a2e; color:#e7ecf3; font-size:16px; width:100%;
+  box-sizing:border-box;
 }
 .card{background:#141a2e;border:1px solid #27314a;border-radius:12px;padding:16px;margin:12px auto;max-width:100%}
 .log{font-family:monospace;background:#0a0f22;border:1px solid #27314a;border-radius:8px;padding:10px;height:160px;overflow:auto}
@@ -29,8 +30,12 @@ select, input[type="number"], input[type="text"], input[type="range"] {
 .drop.dragover{outline:2px solid #5eead4}
 label{display:block;margin-top:10px;font-size:14px;color:#9aa4b2}
 /* 深藍按鈕檔案選擇 */
-.file-btn { display:inline-block; padding:10px 20px; background:#002366; color:#fff; border-radius:6px; cursor:pointer; margin:5px 0; text-align:center; }
+.file-btn {
+  display:inline-block; padding:10px 20px; background:#002366; color:#fff; border-radius:6px; cursor:pointer; margin:5px 0; text-align:center;
+}
 .file-btn input[type=file]{ display:none; }
+.note { color:#ff6666; font-size:14px; margin-top:5px; }
+
 @media(max-width:600px){
   body { margin:5px; }
   .card { margin:5px; padding:12px; }
@@ -39,7 +44,6 @@ label{display:block;margin-top:10px;font-size:14px;color:#9aa4b2}
   .thumbs { grid-template-columns:1fr; gap:6px; }
 }
 </style>
-
 <script src="https://cdn.jsdelivr.net/npm/pica@8.0.0/dist/pica.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip/dist/jszip.min.js"></script>
@@ -48,100 +52,96 @@ label{display:block;margin-top:10px;font-size:14px;color:#9aa4b2}
 <body>
 <h1>Teng Image Tools</h1>
 
-<!-- 分頁切換 -->
 <div class="tabs">
   <div class="tab active" data-tab="resizer">尺寸格式調整</div>
   <div class="tab" data-tab="base64">Base64轉換</div>
 </div>
 
-<!-- 圖片尺寸調整 -->
 <div id="resizer" class="tab-content active">
-  <section class="card">
-    <h2>圖片尺寸/格式調整器</h2>
-    <div class="drop" id="drop">拖曳圖片或資料夾到這裡</div>
-    <label class="file-btn">選擇檔案
-      <input id="fileFiles" type="file" accept="image/*,.heic,.heif" multiple>
-    </label>
-    <label class="file-btn">選擇資料夾
-      <input id="fileFolder" type="file" webkitdirectory>
-    </label>
+<section class="card">
+<h2>圖片尺寸/格式調整器</h2>
+<div class="drop" id="drop">拖曳圖片或資料夾到這裡</div>
+<label class="file-btn">選擇檔案
+  <input id="fileFiles" type="file" accept="image/*,.heic,.heif" multiple>
+</label>
+<label class="file-btn">選擇資料夾
+  <input id="fileFolder" type="file" webkitdirectory>
+</label>
 
-    <h3>執行</h3>
-    <button id="process">開始處理</button>
-    <button id="clear">清空</button>
+<h3>執行</h3>
+<button id="process">開始處理</button>
+<button id="clear">清空</button>
 
-    <h3>輸出選項</h3>
-    <label>輸出格式
-      <select id="format">
-        <option value="keep">維持原格式</option>
-        <option value="image/jpeg" selected>JPEG</option>
-        <option value="image/png">PNG</option>
-        <option value="image/webp">WebP</option>
-      </select>
-    </label>
+<h3>輸出選項</h3>
+<label>輸出格式
+  <select id="format">
+    <option value="keep">維持原格式</option>
+    <option value="image/jpeg" selected>JPEG</option>
+    <option value="image/png">PNG</option>
+    <option value="image/webp">WebP</option>
+  </select>
+</label>
 
-    <label>長邊
-      <select id="longSide">
-        <option value="0" selected>原尺寸</option>
-        <option value="512">512</option>
-        <option value="1024">1024</option>
-        <option value="1280">1280</option>
-        <option value="-1">自訂</option>
-      </select>
-      <input type="number" id="longSideCustom" placeholder="自訂長邊" style="display:none; margin-top:5px;">        
-    </label>
-    <label>短邊
-      <select id="shortSide">
-        <option value="0" selected>原尺寸</option>
-        <option value="512">512</option>
-        <option value="1024">1024</option>
-        <option value="1280">1280</option>
-        <option value="-1">自訂</option>
-      </select>
-      <input type="number" id="shortSideCustom" placeholder="自訂短邊" style="display:none; margin-top:5px;">
-    </label>
+<label>長邊
+  <select id="longEdge">
+    <option value="0" selected>原尺寸</option>
+    <option value="512">512</option>
+    <option value="1024">1024</option>
+    <option value="1280">1280</option>
+    <option value="-1">自訂</option>
+  </select>
+  <input type="number" id="longEdgeCustom" placeholder="自訂長邊" style="display:none; margin-top:5px;">
+</label>
+<label>短邊
+  <select id="shortEdge">
+    <option value="0" selected>原尺寸</option>
+    <option value="512">512</option>
+    <option value="1024">1024</option>
+    <option value="1280">1280</option>
+    <option value="-1">自訂</option>
+  </select>
+  <input type="number" id="shortEdgeCustom" placeholder="自訂短邊" style="display:none; margin-top:5px;">
+</label>
 
-    <label><input id="lock" type="checkbox" checked> 維持長寬比</label>
-    <label>縮放比例 (%) <input id="scale" type="range" min="10" max="200" value="100"><span id="scaleLabel">100%</span></label>
-    <div id="sizeNote" style="color:#f88; font-size:12px; margin-top:5px;"></div>
+<label><input id="lock" type="checkbox" checked> 維持長寬比</label>
+<label>縮放比例 (%) <input id="scale" type="range" min="10" max="200" value="100"><span id="scaleLabel">100%</span></label>
+<div class="note" id="scaleNote"></div>
 
-    <h3>預覽</h3>
-    <div id="thumbs" class="thumbs"></div>
-    <h3>日誌</h3>
-    <div id="log" class="log"></div>
-  </section>
+<h3>預覽</h3>
+<div id="thumbs" class="thumbs"></div>
+<h3>日誌</h3>
+<div id="log" class="log"></div>
+</section>
 </div>
 
-<!-- Base64 轉換 -->
 <div id="base64" class="tab-content">
-  <section class="card">
-    <h2>圖片 → Base64</h2>
-    <label class="file-btn">選擇檔案
-      <input type="file" id="imgToBase64" accept="image/*">
-    </label>
-    <button id="downloadBase64Btn">下載 Base64 txt</button>
-    <textarea id="base64Output" placeholder="這裡會顯示 Base64 編碼"></textarea>
-    <img id="previewBase64Img" class="preview">
+<section class="card">
+<h2>圖片 → Base64</h2>
+<label class="file-btn">選擇檔案
+  <input type="file" id="imgToBase64" accept="image/*">
+</label>
+<button id="downloadBase64Btn">下載 Base64 txt</button>
+<textarea id="base64Output" placeholder="這裡會顯示 Base64 編碼"></textarea>
+<img id="previewBase64Img" class="preview">
 
-    <hr>
-    <h2>Base64 → 圖片</h2>
-    <textarea id="base64Input" placeholder="貼上 Base64 字串（或直接選檔）"></textarea>
-    <label class="file-btn">選擇檔案
-      <input type="file" id="base64File" accept=".txt">
-    </label>
-
-    <div id="progressContainer" style="width:100%; background:#ddd; height:10px; display:none; margin:10px 0;">
-      <div id="progressBar" style="width:0%; height:100%; background:#4caf50; text-align:center; color:white; font-size:12px;">0%</div>
-    </div>
-    <a id="downloadRestored" style="display:none" download="restored.png">下載圖片</a>
-    <img id="restoredImg" class="preview">
-  </section>
+<hr>
+<h2>Base64 → 圖片</h2>
+<textarea id="base64Input" placeholder="貼上 Base64 字串（或直接選檔）"></textarea>
+<label class="file-btn">選擇檔案
+  <input type="file" id="base64File" accept=".txt">
+</label>
+<div id="progressContainer" style="width:100%; background:#ddd; height:10px; display:none; margin:10px 0;">
+  <div id="progressBar" style="width:0%; height:100%; background:#4caf50; text-align:center; color:white; font-size:12px;">0%</div>
+</div>
+<a id="downloadRestored" style="display:none" download="restored.png">下載圖片</a>
+<img id="restoredImg" class="preview">
+</section>
 </div>
 
 <script>
 const picaInstance = window.pica({features:['js','wasm','cib']});
 
-// ---------- 分頁切換 ----------
+// 分頁切換
 document.querySelectorAll(".tab").forEach(tab=>{
   tab.addEventListener("click",()=>{
     document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
@@ -151,19 +151,25 @@ document.querySelectorAll(".tab").forEach(tab=>{
   });
 });
 
-// ---------- 長短邊自訂顯示 ----------
-function toggleCustom(id, selId){
-  document.getElementById(id).style.display = document.getElementById(selId).value==-1 ? 'block':'none';
-}
-['longSide','shortSide'].forEach(sel=>{
-  document.getElementById(sel).addEventListener('change',()=>toggleCustom(sel+'Custom',sel));
-});
+// ---------- 元件 ----------
+const longEdge = document.getElementById('longEdge');
+const longEdgeCustom = document.getElementById('longEdgeCustom');
+const shortEdge = document.getElementById('shortEdge');
+const shortEdgeCustom = document.getElementById('shortEdgeCustom');
+const scale = document.getElementById('scale');
+const scaleLabel = document.getElementById('scaleLabel');
+const scaleNote = document.getElementById('scaleNote');
+const lock = document.getElementById('lock');
 
-// ---------- 縮放顯示 ----------
-const scaleInput = document.getElementById('scale');
-scaleInput.addEventListener('input',()=>{ document.getElementById('scaleLabel').textContent = scaleInput.value+'%'; updateThumbSizes(); });
+longEdge.addEventListener('change', e=>{longEdgeCustom.style.display = e.target.value==-1?'block':'none'; updateAllThumbs();});
+shortEdge.addEventListener('change', e=>{shortEdgeCustom.style.display = e.target.value==-1?'block':'none'; updateAllThumbs();});
+longEdgeCustom.addEventListener('input', updateAllThumbs);
+shortEdgeCustom.addEventListener('input', updateAllThumbs);
+scale.addEventListener('input', ()=>{ scaleLabel.textContent = scale.value+'%'; updateAllThumbs(); });
 
-// ---------- 日誌 ----------
+// ---------- 縮圖與日誌 ----------
+const thumbs = document.getElementById("thumbs");
+const queue = [];
 const logEl = document.getElementById("log");
 function log(msg){ 
   const time=new Date().toLocaleTimeString(); 
@@ -171,17 +177,49 @@ function log(msg){
   logEl.scrollTop=logEl.scrollHeight;
 }
 
-// ---------- 縮圖 ----------
-const thumbs = document.getElementById("thumbs");
-const queue = [];
-function addThumb(file,img){
+function addThumb(src,name,w,h){
   const div = document.createElement('div'); div.className='thumb';
-  const image = new Image(); image.src = img; div.appendChild(image);
+  const img = new Image(); img.src=src; div.appendChild(img);
   const meta = document.createElement('div'); meta.className='meta';
-  meta.textContent = file.name; div.appendChild(meta);
+  meta.innerHTML=`${name}<br>${w}×${h}px → ${w}×${h}px`; 
+  div.appendChild(meta);
   thumbs.appendChild(div);
-  updateThumbSizes();
+  queue.push({file:null, src, div, img, origW:w, origH:h});
 }
+
+function updateThumb(queueItem){
+  const {origW, origH, div} = queueItem;
+  let w=origW, h=origH;
+  const longVal = Number(longEdge.value==-1?longEdgeCustom.value:longEdge.value);
+  const shortVal = Number(shortEdge.value==-1?shortEdgeCustom.value:shortEdge.value);
+  const scaleVal = Number(scale.value)/100;
+  let noteMsg='';
+  if((longVal>0 || shortVal>0) && scaleVal!=1){ noteMsg='注意：已設定長/短邊，縮放比例將忽略'; }
+  scaleNote.textContent = noteMsg;
+  if(longVal>0 || shortVal>0){
+    const isLandscape = origW>=origH;
+    let aspect = origW/origH;
+    if(lock.checked){
+      if(isLandscape){
+        if(longVal>0){ w=longVal; h=Math.round(w/aspect); }
+        if(shortVal>0){ h=shortVal; w=Math.round(h*aspect); }
+      } else {
+        if(longVal>0){ h=longVal; w=Math.round(h*aspect); }
+        if(shortVal>0){ w=shortVal; h=Math.round(w/aspect); }
+      }
+    } else {
+      if(longVal>0) w=h=longVal;
+      if(shortVal>0) w=h=shortVal;
+    }
+  } else {
+    w=Math.round(origW*scaleVal); h=Math.round(origH*scaleVal);
+  }
+  queueItem.w=w; queueItem.h=h;
+  const meta = div.querySelector('.meta');
+  meta.innerHTML=`${queueItem.src.split('/').pop()}<br>${origW}×${origH}px → ${w}×${h}px`;
+}
+
+function updateAllThumbs(){ queue.forEach(updateThumb); }
 
 // ---------- 拖放與檔案 ----------
 const drop=document.getElementById('drop');
@@ -193,50 +231,15 @@ document.getElementById('fileFolder').addEventListener('change', e=>handleFiles(
 
 async function handleFiles(list){
   for(const file of list){
-    queue.push(file);
-    addThumb(file, URL.createObjectURL(file));
+    const img = new Image();
+    img.onload=()=> addThumb(URL.createObjectURL(file),file.name,img.naturalWidth,img.naturalHeight);
+    img.src=URL.createObjectURL(file);
+    log(`加入 ${file.name}`);
   }
-  log(`加入 ${list.length} 個檔案`);
-}
-
-// ---------- 計算尺寸 ----------
-function calcTargetSize(origW,origH){
-  const longSideSel = Number(document.getElementById('longSide').value);
-  const longSideCustom = Number(document.getElementById('longSideCustom').value);
-  const shortSideSel = Number(document.getElementById('shortSide').value);
-  const shortSideCustom = Number(document.getElementById('shortSideCustom').value);
-  const scale = Number(document.getElementById('scale').value)/100;
-  let w = origW, h = origH;
-  const sidesSet = longSideSel>0 || longSideSel==-1 || shortSideSel>0 || shortSideSel==-1;
-  if(sidesSet){
-    document.getElementById('sizeNote').textContent = "注意：已設定長/短邊，縮放比例將忽略";
-    let longer = Math.max(origW,origH);
-    let shorter = Math.min(origW,origH);
-    // 長邊
-    if(longSideSel>0) longer = longSideSel;
-    else if(longSideSel==-1 && longSideCustom>0) longer = longSideCustom;
-    // 短邊
-    if(shortSideSel>0) shorter = shortSideSel;
-    else if(shortSideSel==-1 && shortSideCustom>0) shorter = shortSideCustom;
-    if(origW>origH){ w=longer; h=shorter; } else { w=shorter; h=longer; }
-  } else { w = Math.round(origW*scale); h = Math.round(origH*scale); document.getElementById('sizeNote').textContent=''; }
-  return {w,h};
-}
-
-// ---------- 更新縮圖尺寸顯示 ----------
-function updateThumbSizes(){
-  document.querySelectorAll('.thumb').forEach(div=>{
-    const img = div.querySelector('img');
-    const meta = div.querySelector('.meta');
-    const origW = img.naturalWidth;
-    const origH = img.naturalHeight;
-    const {w,h} = calcTargetSize(origW,origH);
-    const name = meta.textContent.split(' → ')[0];
-    meta.innerHTML = `${name}<br>${origW}×${origH} → ${w}×${h}px`;
-  });
 }
 
 // ---------- 處理圖片 ----------
+const pica = window.pica({features:['js','wasm','cib']});
 function guessMime(name,original){
   const fmt = document.getElementById('format').value;
   if(fmt!='keep') return fmt;
@@ -245,42 +248,38 @@ function guessMime(name,original){
   return map[ext]||original||'image/jpeg';
 }
 
-async function readAsImage(blob){
-  return new Promise((res,rej)=>{
-    const url = URL.createObjectURL(blob);
-    const img = new Image();
-    img.onload=()=>{URL.revokeObjectURL(url); res(img);};
-    img.onerror=rej;
-    img.src=url;
+async function processFile(file, queueItem){
+  let f=file;
+  if(file.name.toLowerCase().endsWith(".heic")||file.name.toLowerCase().endsWith(".heif")){
+    const blob = await heic2any({blob:file,toType:"image/png"});
+    f = new File([blob],file.name.replace(/\.(heic|heif)$/i,'.png'),{type:"image/png"});
+  }
+  const img = await new Promise(res=>{
+    const i = new Image();
+    i.onload=()=>res(i);
+    i.src=queueItem.src;
   });
-}
-
-async function processFile(file){
-  try{
-    let f=file;
-    if(file.name.toLowerCase().endsWith(".heic")||file.name.toLowerCase().endsWith(".heif")){
-      const blob = await heic2any({blob:file,toType:"image/png"});
-      f = new File([blob],file.name.replace(/\.(heic|heif)$/i,'.png'),{type:"image/png"});
-    }
-    const img = await readAsImage(f);
-    const {w,h} = calcTargetSize(img.naturalWidth,img.naturalHeight);
-    const canvas = document.createElement('canvas'); canvas.width=w; canvas.height=h;
-    await picaInstance.resize(img,canvas,{quality:3,alpha:true});
-    const mime = guessMime(f.name,f.type);
-    const quality = Number(document.getElementById('scale').value)/100;
-    const outBlob = await picaInstance.toBlob(canvas,mime,(mime.includes('jpeg')||mime.includes('webp'))?quality:undefined);
-    const extMap={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'};
-    const ext = extMap[mime]||'jpg';
-    const outName = `${file.name.replace(/\.[^.]+$/,'')}_${w}x${h}.${ext}`;
-    return {blob:outBlob,name:outName,w,h};
-  }catch(e){ log(`錯誤：${file.name} → ${e}`); return null;}
+  const {w,h} = queueItem;
+  const canvas = document.createElement('canvas'); canvas.width=w; canvas.height=h;
+  await pica.resize(img,canvas,{quality:3,alpha:true});
+  const mime = guessMime(f.name,f.type);
+  const quality = Number(document.getElementById('quality')?.value||90)/100;
+  const outBlob = await pica.toBlob(canvas,mime,(mime.includes('jpeg')||mime.includes('webp'))?quality:undefined);
+  const extMap={'image/jpeg':'jpg','image/png':'png','image/webp':'webp'};
+  const ext = extMap[mime]||'jpg';
+  const outName = `${f.name.replace(/\.[^.]+$/,'')}_${w}x${h}.${ext}`;
+  return {blob:outBlob,name:outName};
 }
 
 document.getElementById('process').addEventListener('click', async()=>{
   if(queue.length===0){ log('尚未選擇檔案'); return;}
   log(`開始處理 ${queue.length} 個檔案…`);
-  const results = [];
-  for(const f of queue){ const r=await processFile(f); if(r) results.push(r);}
+  const results=[];
+  for(const item of queue){
+    if(!item.file){ log(`無檔案資訊: ${item.src}`); continue; }
+    const r=await processFile(item.file,item);
+    results.push(r);
+  }
   if(results.length===1) downloadBlob(results[0].blob,results[0].name);
   else if(results.length>1){
     const zip = new JSZip(); results.forEach(r=>zip.file(r.name,r.blob));
